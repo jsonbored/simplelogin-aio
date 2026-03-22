@@ -1,0 +1,5 @@
+#!/command/with-contenv bash
+cd /code || exit 1
+# Default to 2 workers if not specified
+WORKERS=${GUNICORN_WORKERS:-2}
+exec s6-setuidgid simplelogin gunicorn --bind 0.0.0.0:7777 --workers $WORKERS wsgi:app

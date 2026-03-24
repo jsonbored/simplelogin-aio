@@ -36,7 +36,7 @@ echo "POSTFIX_SERVER=127.0.0.1" >> "$ENV_FILE"
 echo "POSTFIX_PORT=${POSTFIX_PORT:-25}" >> "$ENV_FILE"
 echo "DKIM_PRIVATE_KEY_PATH=/dkim.key" >> "$ENV_FILE"
 echo "DKIM_PUBLIC_KEY_PATH=/dkim.pub.key" >> "$ENV_FILE"
-echo "GNUPGHOME=${GNUPGHOME:-/sl/pgp}" >> "$ENV_FILE"
+echo "GNUPGHOME=/pgp" >> "$ENV_FILE"
 
 # Self-hosting optimized defaults
 echo "LOCAL_FILE_UPLOAD=${LOCAL_FILE_UPLOAD:-true}" >> "$ENV_FILE"

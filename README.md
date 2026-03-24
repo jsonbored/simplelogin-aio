@@ -34,3 +34,12 @@ If the initialization script detects those variables on startup, it will **compl
 
 ## Documentation
 - [Full Setup & DNS Configuration Guide](docs/simplelogin-setup.md)
+
+## Advanced Power-User Features
+For self-hosting purists, this template exposes advanced variables to integrate with your existing ecosystem. Toggle "Advanced View" in Unraid to configure:
+- **SSO / Identity:** Integrate directly with Tailscale IDP (`tsidp`), Authelia, or Authentik via the generic OIDC variables.
+- **Anti-Spam:** Offload scanning to a separate `SpamAssassin` container by linking its IP.
+- **Telemetry:** Point error tracking and analytics to your own self-hosted `Sentry` and `Plausible` instances.
+- **PGP Encryption:** Mount your own keyring to encrypt emails locally before they leave the server.
+
+For a full breakdown of these capabilities, read the [Advanced Features Documentation](docs/ADVANCED-FEATURES-RESEARCH.md).

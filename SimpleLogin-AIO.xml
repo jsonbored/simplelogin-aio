@@ -167,6 +167,17 @@ First-Run Steps:
   
   <Config Name="Disable Registration" Target="DISABLE_REGISTRATION" Default="1" Mode="" Description="Set to 1 to block public registration (recommended)." Type="Variable" Display="advanced" Required="false" Mask="false" />
 
+  <!-- ADVANCED: ACT AS IDENTITY PROVIDER -->
+  <Config Name="IdP: Enable SimpleLogin SSO" Target="ENABLE_OIDC_SERVER" Default="0" Mode="" Description="Set to 1 to allow other apps to u0027Login with SimpleLoginu0027. This automatically generates the required JWT RS256 keys on boot." Type="Variable" Display="advanced" Required="false" Mask="false" />
+
+  <!-- ADVANCED: APPLE SIGN-IN -->
+  <Config Name="Apple: API Secret" Target="APPLE_API_SECRET" Default="" Mode="" Description="If you want to allow iOS users to sign in with Apple. Requires Apple Developer Portal setup." Type="Variable" Display="advanced" Required="false" Mask="true" />
+  <Config Name="Apple: MacApp API Secret" Target="MACAPP_APPLE_API_SECRET" Default="" Mode="" Description="If using the native Mac app." Type="Variable" Display="advanced" Required="false" Mask="true" />
+
+  <!-- ADVANCED: DATA BREACH SCANNING (HIBP) -->
+  <Config Name="HIBP: API Key" Target="HIBP_API_KEYS" Default="" Mode="" Description="Have I Been Pwned API Key. If provided, SimpleLogin will scan your aliases for data breaches." Type="Variable" Display="advanced" Required="false" Mask="true" />
+  <Config Name="HIBP: Scan Interval" Target="HIBP_SCAN_INTERVAL_DAYS" Default="7" Mode="" Description="How often (in days) to check HIBP for breaches." Type="Variable" Display="advanced" Required="false" Mask="false" />
+
   <!-- ADVANCED: SINGLE SIGN-ON (OIDC) -->
   <Config Name="SSO: OIDC Discovery URL" Target="OIDC_WELL_KNOWN_URL" Default="" Mode="" Description="Enter the well-known URL for your self-hosted IdP (e.g. Tailscale tsidp, Authelia, Authentik). Example: https://auth.lan/.well-known/openid-configuration" Type="Variable" Display="advanced" Required="false" Mask="false" />
   <Config Name="SSO: OIDC Client ID" Target="OIDC_CLIENT_ID" Default="" Mode="" Description="Client ID for your self-hosted OIDC provider." Type="Variable" Display="advanced" Required="false" Mask="false" />

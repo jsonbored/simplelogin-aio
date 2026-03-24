@@ -186,6 +186,8 @@ First-Run Steps:
 
   <!-- ADVANCED: PGP ENCRYPTION -->
   <Config Name="PGP: Keyring Directory" Target="/pgp" Default="/mnt/user/appdata/simplelogin-aio/pgp" Mode="rw" Description="Persistent directory for your GnuPG keyring. Used to encrypt forwarded emails before they reach your real inbox." Type="Path" Display="advanced" Required="false" Mask="false" />
+  <Config Name="PGP: Auto-Generate Server Key" Target="AUTO_GENERATE_PGP" Default="0" Mode="" Description="Set to 1 to automatically generate a 4096-bit RSA server key for signing outgoing forwards. Safe to enable, but only useful for advanced users. Defaults to 0 (Disabled)." Type="Variable" Display="advanced" Required="false" Mask="false" />
+
   <Config Name="PGP: Private Key Path" Target="PGP_SENDER_PRIVATE_KEY_PATH" Default="" Mode="" Description="Internal container path to your specific private PGP key (e.g., /pgp/my-private-key.asc) if you want SimpleLogin to sign outbound forwards." Type="Variable" Display="advanced" Required="false" Mask="false" />
 
 </Container>

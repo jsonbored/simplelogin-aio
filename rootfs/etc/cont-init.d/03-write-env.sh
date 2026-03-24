@@ -27,7 +27,8 @@ echo "EMAIL_DOMAIN=${EMAIL_DOMAIN}" >> "$ENV_FILE"
 echo "SUPPORT_EMAIL=${SUPPORT_EMAIL}" >> "$ENV_FILE"
 echo "FLASK_SECRET=${FLASK_SECRET}" >> "$ENV_FILE"
 echo "DB_URI=${DB_URI}" >> "$ENV_FILE"
-echo "POSTFIX_SERVER=${POSTFIX_SERVER}" >> "$ENV_FILE"
+echo "REDIS_URL=${REDIS_URL}" >> "$ENV_FILE"
+echo "POSTFIX_SERVER=127.0.0.1" >> "$ENV_FILE"
 
 # ------------------------------------------------------------------------------
 # DEFAULTS & HARDCODED PATHS

@@ -1,0 +1,7 @@
+#!/command/with-contenv bash
+if [ -n "$REDIS_URL" ] && [[ "$REDIS_URL" != *"127.0.0.1"* ]]; then
+    # User provided external Redis
+    sleep infinity
+fi
+
+exec s6-setuidgid redis redis-server --dir /appdata/redis --save 60 1

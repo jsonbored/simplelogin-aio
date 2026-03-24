@@ -1,0 +1,8 @@
+#!/command/with-contenv bash
+if [ -n "$DB_URI" ] && [[ "$DB_URI" != *"127.0.0.1"* ]]; then
+    # User provided external DB, don't run internal
+    sleep infinity
+fi
+
+PG_VERSION=$(ls /usr/lib/postgresql/ | head -n 1)
+exec s6-setuidgid postgres /usr/lib/postgresql/${PG_VERSION}/bin/postgres -D /appdata/postgres

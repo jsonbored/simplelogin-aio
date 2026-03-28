@@ -60,3 +60,13 @@ For a full breakdown of these capabilities, read the [Advanced Features Document
 [![Star History Chart](https://api.star-history.com/svg?repos=JSONbored/simplelogin-aio&type=Date)](https://star-history.com/#JSONbored/simplelogin-aio&Date)
 
 </div>
+
+---
+
+## 👨‍💻 About the Creator
+
+Built with 🖤 by **[JSONbored](https://github.com/JSONbored)**.
+
+- 🌐 **Portfolio & Services:** [aethereal.dev](https://aethereal.dev)
+- 📅 **Book a Call:** [cal.com/aethereal](https://cal.com/aethereal) 
+- ☕ **Support my work:** [Sponsor on GitHub](https://github.com/sponsors/JSONbored)

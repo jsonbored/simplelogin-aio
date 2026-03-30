@@ -1,6 +1,6 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1@sha256:4a43a54dd1fedceb30ba47e76cfcf2b47304f4161c0caeac2db1c61804ea3c91
 
-ARG UPSTREAM_VERSION=v4.79.0
+ARG UPSTREAM_VERSION=v4.79.0@sha256:cdbfd45967ecca12002433c42850fea7bb431ac821fed936b6476f973a292732
 FROM simplelogin/app-ci:${UPSTREAM_VERSION}
 
 ARG S6_OVERLAY_VERSION=3.2.0.0

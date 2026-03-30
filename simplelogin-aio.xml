@@ -31,8 +31,8 @@ Advanced users can still point the container at external PostgreSQL and Redis by
 Current upstream packaging is amd64/x86_64 only.
   </Overview>
   <Category>Network:Email Privacy:Anti-Tracking</Category>
-  <Icon>https://raw.githubusercontent.com/JSONbored/unraid-templates/main/icons/simplelogin.png</Icon>
-  <TemplateURL>https://raw.githubusercontent.com/JSONbored/simplelogin-aio/main/simplelogin-aio.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/JSONbored/awesome-unraid/main/icons/simplelogin.jpeg</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/JSONbored/awesome-unraid/main/simplelogin-aio.xml</TemplateURL>
   <Beta>True</Beta>
   <ExtraSearchTerms>email, alias, proxy, privacy, proton, forwarding, self-contained</ExtraSearchTerms>
 

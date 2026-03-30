@@ -10,12 +10,19 @@ KEEP_SMOKE_ARTIFACTS="${KEEP_SMOKE_ARTIFACTS:-0}"
 
 TMP_APPDATA="$(mktemp -d /tmp/simplelogin-aio-appdata.XXXXXX)"
 TMP_PGP="$(mktemp -d /tmp/simplelogin-aio-pgp.XXXXXX)"
+chmod 755 "$TMP_APPDATA"
 cleanup_needed=1
 
 cleanup() {
   local exit_code=$?
   if [[ "$cleanup_needed" -eq 1 ]]; then
     docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    if [[ -d "$TMP_APPDATA" ]]; then
+      docker run --rm -v "${TMP_APPDATA}:/cleanup" --entrypoint sh "$IMAGE_TAG" -c 'rm -rf /cleanup/* /cleanup/.[!.]* /cleanup/..?* 2>/dev/null || true' >/dev/null 2>&1 || true
+    fi
+    if [[ -d "$TMP_PGP" ]]; then
+      docker run --rm -v "${TMP_PGP}:/cleanup" --entrypoint sh "$IMAGE_TAG" -c 'rm -rf /cleanup/* /cleanup/.[!.]* /cleanup/..?* 2>/dev/null || true' >/dev/null 2>&1 || true
+    fi
     rm -rf "$TMP_APPDATA" "$TMP_PGP"
   elif [[ "$exit_code" -ne 0 ]]; then
     echo "Smoke test failed; preserving artifacts for debugging."

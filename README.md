@@ -1,72 +1,62 @@
-<div align="center">
+# simplelogin-aio
 
-# SimpleLogin AIO (All-in-One) for Unraid
+SimpleLogin packaged as a true All-In-One Unraid container.
 
-[![Docker Image Size](https://img.shields.io/docker/image-size/jsonbored/simplelogin-aio/latest?color=blue&label=Image%20Size)](https://github.com/JSONbored/simplelogin-aio/pkgs/container/simplelogin-aio)
-[![GitHub License](https://img.shields.io/github/license/JSONbored/simplelogin-aio?color=green)](https://github.com/JSONbored/simplelogin-aio/blob/main/LICENSE)
-[![Unraid Community Applications](https://img.shields.io/badge/Unraid-CA%20Template-orange)](https://unraid.net/community/apps)
+`simplelogin-aio` bundles the SimpleLogin web app, background jobs, inbound email handler, Postfix, PostgreSQL, and Redis into a single container with Unraid-friendly persistence. A normal install only needs one image, one `/appdata` mapping, and the usual domain + DNS setup required by any self-hosted mail stack.
 
-An ultra-simplified, 100% self-contained deployment of [SimpleLogin](https://simplelogin.io) designed explicitly for Unraid homelabs.
+## What This Repo Ships
 
-</div>
+- A single-container `ghcr.io/jsonbored/simplelogin-aio:latest` image
+- Explicit image tags matching the pinned upstream release, plus `latest` and `sha-...`
+- An Unraid CA template at [simplelogin-aio.xml](/tmp/simplelogin-aio/simplelogin-aio.xml)
+- A local smoke test at [scripts/smoke-test.sh](/tmp/simplelogin-aio/scripts/smoke-test.sh)
+- Upstream release monitoring via [upstream.toml](/tmp/simplelogin-aio/upstream.toml) and [scripts/check-upstream.py](/tmp/simplelogin-aio/scripts/check-upstream.py)
+- Automated `awesome-unraid` sync for the XML
 
----
+## Included Services
 
-Instead of configuring 3 different templates, managing custom Docker networks, and bootstrapping external PostgreSQL/Redis databases, this image handles the entire stack internals for you. It's designed to provide a "Binhex-style" one-click installation experience for users who just want it to work.
+- SimpleLogin web UI on port `7777`
+- Postfix for inbound SMTP on port `25`
+- Embedded PostgreSQL inside the container
+- Embedded Redis inside the container
+- SimpleLogin email handler and background job runner
 
-## 📦 What's Inside the "Mega-Container"
-This image uses `s6-overlay` to gracefully orchestrate the entire self-hosted alias ecosystem invisibly:
-- 🌐 **The Web UI:** SimpleLogin's Python-based dashboard.
-- ⚙️ **The Task Runner:** SimpleLogin Background Job Worker (Celery).
-- 📧 **The MTA Router:** **Postfix** is built-in to route inbound/outbound mail instantly.
-- 🗄️ **The Database:** **PostgreSQL 14** is auto-provisioned securely internally.
-- ⚡ **The Cache:** **Redis** is auto-provisioned for rapid background queuing.
+## Important Runtime Notes
 
-## 🚀 Installation (For Beginners)
-1. Add this repository to your Unraid Community Applications: `https://github.com/JSONbored/simplelogin-aio`
-2. Search and Install **SimpleLogin-AIO**.
-3. Fill out your `App URL` and `Email Domain`.
-4. Pick an **SMTP Relay Provider** from the dropdown (to bypass residential Port 25 outbound blocking) and enter your credentials.
-5. Click **Apply**. 
+- Current upstream SimpleLogin container support is `linux/amd64` only, so `simplelogin-aio` currently publishes amd64-only images.
+- First boot initializes PostgreSQL, writes the runtime `.env`, applies `alembic upgrade head`, and then runs `init_app.py`.
+- `/appdata` is the main persistent volume. `/pgp` is optional for advanced PGP usage.
+- If you already run external PostgreSQL or Redis, set `DB_URI` and `REDIS_URL` in the Unraid template and the internal daemons will stay idle.
 
-**That's it.** The container will silently generate a secure internal database, apply migrations, build your DKIM cryptography keys, and map everything persistently to your array under a single `/mnt/user/appdata/simplelogin-aio` folder.
+## Quick Start
 
-## 🛠️ Power Users (External Databases)
-If you already run a shared `postgres` or `redis` container on your Unraid box and don't want the overhead of the internal versions running, you can easily disable them!
+1. Install the Unraid template.
+2. Set `URL`, `EMAIL_DOMAIN`, `SUPPORT_EMAIL`, and `FLASK_SECRET`.
+3. Pick a relay mode if your ISP blocks outbound port `25`.
+4. Forward inbound TCP port `25` to the Unraid host if you want aliases to receive internet mail.
+5. Review [docs/simplelogin-setup.md](/tmp/simplelogin-aio/docs/simplelogin-setup.md) for the required DNS records and mail-routing checklist.
 
-Inside the Unraid Template, toggle the **Advanced View**. 
-- Fill out the `Advanced: External DB_URI` variable with your remote Postgres string.
-- Fill out the `Advanced: External Redis URL` variable.
+## Validation
 
-If the initialization script detects those variables on startup, it will **completely skip** booting the internal PostgreSQL/Redis daemons and route traffic externally. 
+Local validation completed on March 29, 2026:
 
-## 🛡️ Advanced Features (Self-Hosted Maximalists)
-This template exposes advanced variables to integrate with your existing ecosystem. Toggle "Advanced View" in Unraid to configure:
-- **SSO / Identity:** Integrate directly with [Tailscale IDP (`tsidp`)](https://tailscale.com), Authelia, or Authentik via the generic OIDC variables.
-- **Anti-Spam:** Offload scanning to a separate `SpamAssassin` container by linking its IP.
-- **Telemetry:** Point error tracking and analytics to your own self-hosted `Sentry` and `Plausible` instances.
-- **PGP Encryption:** Mount your own keyring to encrypt emails locally before they leave the server.
+- explicit `linux/amd64` Docker build succeeded
+- full local smoke test passed end-to-end
+- restart and persistence coverage added to the smoke test
+- internal PostgreSQL, Redis, web, background jobs, and Postfix all validated in the same container
+- workflow hardening added with pinned action SHAs, dependency review, and upstream release tracking
 
-For a full breakdown of these capabilities, read the [Advanced Features Documentation](docs/ADVANCED-FEATURES-RESEARCH.md).
+## Support
 
-## 📚 Documentation & Setup
-- [Full Setup & DNS Configuration Guide](docs/simplelogin-setup.md)
+- Issues: [JSONbored/simplelogin-aio issues](https://github.com/JSONbored/simplelogin-aio/issues)
+- Upstream app: [simple-login/app](https://github.com/simple-login/app)
 
----
+## Funding
 
-<div align="center">
+If this work saves you time, support it here:
 
-### Star History
-[![Star History Chart](https://api.star-history.com/svg?repos=JSONbored/simplelogin-aio&type=Date)](https://star-history.com/#JSONbored/simplelogin-aio&Date)
+- [GitHub Sponsors](https://github.com/sponsors/JSONbored)
 
-</div>
+## Star History
 
----
-
-## 👨‍💻 About the Creator
-
-Built with 🖤 by **[JSONbored](https://github.com/JSONbored)**.
-
-- 🌐 **Portfolio & Services:** [aethereal.dev](https://aethereal.dev)
-- 📅 **Book a Call:** [cal.com/aethereal](https://cal.com/aethereal) 
-- ☕ **Support my work:** [Sponsor on GitHub](https://github.com/sponsors/JSONbored)
+[![Star History Chart](https://api.star-history.com/svg?repos=JSONbored/simplelogin-aio&theme=dark)](https://star-history.com/#JSONbored/simplelogin-aio&Date)

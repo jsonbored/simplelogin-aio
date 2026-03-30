@@ -1,0 +1,11 @@
+[upstream]
+name = "SimpleLogin"
+type = "github-release"
+repo = "simple-login/app"
+version_source = "dockerfile-arg"
+version_key = "UPSTREAM_VERSION"
+strategy = "pr"
+stable_only = true
+
+[notifications]
+release_notes_url = "https://github.com/simple-login/app/releases"

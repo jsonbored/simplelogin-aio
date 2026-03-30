@@ -1,7 +1,11 @@
 #!/command/with-contenv bash
-if [ -n "$REDIS_URL" ] && [[ "$REDIS_URL" != *"127.0.0.1"* ]]; then
-    # User provided external Redis
-    sleep infinity
+set -euo pipefail
+
+REDIS_URL_VALUE="${REDIS_URL:-$(cat /run/s6/container_environment/REDIS_URL 2>/dev/null || true)}"
+
+if [ -n "${REDIS_URL_VALUE}" ] && [[ "${REDIS_URL_VALUE}" != *"127.0.0.1"* ]] && [[ "${REDIS_URL_VALUE}" != *"localhost"* ]]; then
+    exec sleep infinity
 fi
 
-exec s6-setuidgid redis redis-server --dir /appdata/redis --save 60 1
+chown -R redis:redis /appdata/redis
+exec s6-setuidgid redis redis-server --bind 127.0.0.1 --dir /appdata/redis --save 60 1

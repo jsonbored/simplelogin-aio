@@ -1,3 +1,10 @@
 #!/command/with-contenv bash
+set -euo pipefail
+
+until curl -fsS http://127.0.0.1:7777/health >/dev/null; do
+    echo "Waiting for SimpleLogin web service before starting email handler..."
+    sleep 2
+done
+
 cd /code || exit 1
-exec s6-setuidgid simplelogin python email_handler.py
+exec python email_handler.py

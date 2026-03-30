@@ -1,42 +1,51 @@
 #!/command/with-contenv bash
+set -euo pipefail
 
 echo "Checking internal database requirements..."
 
-mkdir -p /appdata/postgres /appdata/redis /appdata/dkim /appdata/sl
+mkdir -p /appdata/postgres /appdata/redis /appdata/dkim /appdata/sl/upload /pgp /run/postgresql
 chown -R redis:redis /appdata/redis
-chown -R postgres:postgres /appdata/postgres
+chown -R postgres:postgres /appdata/postgres /run/postgresql
+chown -R simplelogin:simplelogin /appdata/sl /pgp
+chmod 700 /pgp
 
-# Auto-provision Postgres if DB_URI is empty
-if [ -z "$DB_URI" ]; then
+rm -rf /code/static/upload
+ln -sfn /appdata/sl/upload /code/static/upload
+
+DB_URI_VALUE="${DB_URI:-}"
+if [ -z "$DB_URI_VALUE" ]; then
     echo "No external DB_URI provided. Bootstrapping internal PostgreSQL..."
-    
-    # Initialize DB if empty
+
     if [ ! -f "/appdata/postgres/PG_VERSION" ]; then
         echo "Initializing bare Postgres cluster..."
-        # Get postgres version directory (e.g. /usr/lib/postgresql/14/bin/initdb)
         PG_BIN_DIR=$(ls -d /usr/lib/postgresql/*/bin | head -n 1)
-        su - postgres -c "$PG_BIN_DIR/initdb -D /appdata/postgres"
-        
-        # We need a random password for the simplelogin user to secure it internally
-        INTERNAL_PG_PASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
-        echo "$INTERNAL_PG_PASS" > /appdata/postgres/.sl_internal_pass
+        su -s /bin/bash postgres -c "$PG_BIN_DIR/initdb -D /appdata/postgres"
+
+        INTERNAL_PG_PASS=$(openssl rand -hex 24)
+        printf '%s\n' "$INTERNAL_PG_PASS" > /appdata/postgres/.sl_internal_pass
         chown postgres:postgres /appdata/postgres/.sl_internal_pass
-        
-        # Start PG temporarily to create user/db
-        su - postgres -c "$PG_BIN_DIR/pg_ctl -D /appdata/postgres start"
-        sleep 3
-        su - postgres -c "psql -c \"CREATE USER simplelogin WITH PASSWORD '$INTERNAL_PG_PASS';\""
-        su - postgres -c "psql -c \"CREATE DATABASE simplelogin OWNER simplelogin;\""
-        su - postgres -c "$PG_BIN_DIR/pg_ctl -D /appdata/postgres stop"
+
+        su -s /bin/bash postgres -c "$PG_BIN_DIR/pg_ctl -D /appdata/postgres -o \"-c listen_addresses='127.0.0.1'\" -w start"
+        su -s /bin/bash postgres -c "psql postgres <<'SQL'
+DO \$\$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'simplelogin') THEN
+        CREATE ROLE simplelogin LOGIN PASSWORD '${INTERNAL_PG_PASS}';
+    ELSE
+        ALTER ROLE simplelogin WITH PASSWORD '${INTERNAL_PG_PASS}';
+    END IF;
+END
+\$\$;
+SQL"
+        su -s /bin/bash postgres -c "psql postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='simplelogin'\" | grep -qx 1 || createdb -O simplelogin simplelogin"
+        su -s /bin/bash postgres -c "$PG_BIN_DIR/pg_ctl -D /appdata/postgres -m fast -w stop"
     fi
-    
-    # Export the DB_URI for the python app to use downstream
+
     INTERNAL_PG_PASS=$(cat /appdata/postgres/.sl_internal_pass)
-    # Write to s6-env so other scripts see it
-    echo "postgresql://simplelogin:$INTERNAL_PG_PASS@127.0.0.1:5432/simplelogin" > /var/run/s6/container_environment/DB_URI
+    DB_URI_VALUE="postgresql://simplelogin:${INTERNAL_PG_PASS}@127.0.0.1:5432/simplelogin"
 fi
 
-if [ -z "$REDIS_URL" ]; then
-    echo "redis://127.0.0.1:6379/0" > /var/run/s6/container_environment/REDIS_URL
-fi
+REDIS_URL_VALUE="${REDIS_URL:-redis://127.0.0.1:6379/0}"
 
+printf '%s\n' "$DB_URI_VALUE" > /var/run/s6/container_environment/DB_URI
+printf '%s\n' "$REDIS_URL_VALUE" > /var/run/s6/container_environment/REDIS_URL

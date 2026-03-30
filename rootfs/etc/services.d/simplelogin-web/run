@@ -1,5 +1,49 @@
 #!/command/with-contenv bash
+set -euo pipefail
+
+wait_for_postgres() {
+    local db_uri_value="${DB_URI:-$(cat /run/s6/container_environment/DB_URI 2>/dev/null || true)}"
+    until DB_URI_CHECK="${db_uri_value}" python - <<'PY'
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
+import os
+
+db_uri = os.environ["DB_URI_CHECK"]
+try:
+    engine = create_engine(db_uri)
+    with engine.connect():
+        pass
+except SQLAlchemyError:
+    raise SystemExit(1)
+PY
+    do
+        echo "Waiting for PostgreSQL to accept connections..."
+        sleep 2
+    done
+}
+
+wait_for_redis() {
+    local redis_url_value="${REDIS_URL:-$(cat /run/s6/container_environment/REDIS_URL 2>/dev/null || true)}"
+    until redis-cli -u "${redis_url_value}" ping >/dev/null 2>&1; do
+        echo "Waiting for Redis to accept connections..."
+        sleep 2
+    done
+}
+
 cd /code || exit 1
-# Default to 2 workers if not specified
-WORKERS=${GUNICORN_WORKERS:-2}
-exec s6-setuidgid simplelogin gunicorn --bind 0.0.0.0:7777 --workers $WORKERS wsgi:app
+
+wait_for_postgres
+wait_for_redis
+
+echo "Running SimpleLogin database migrations..."
+alembic upgrade head
+
+MARKER_FILE="/appdata/sl/.initialized"
+if [ ! -f "$MARKER_FILE" ]; then
+    echo "Running SimpleLogin first-run initialization..."
+    python init_app.py
+    touch "$MARKER_FILE"
+fi
+
+WORKERS="${GUNICORN_WORKERS:-2}"
+exec gunicorn --bind 0.0.0.0:7777 --workers "$WORKERS" wsgi:app

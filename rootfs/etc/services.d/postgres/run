@@ -1,8 +1,13 @@
 #!/command/with-contenv bash
-if [ -n "$DB_URI" ] && [[ "$DB_URI" != *"127.0.0.1"* ]]; then
-    # User provided external DB, don't run internal
-    sleep infinity
+set -euo pipefail
+
+DB_URI_VALUE="${DB_URI:-$(cat /run/s6/container_environment/DB_URI 2>/dev/null || true)}"
+
+if [ -n "${DB_URI_VALUE}" ] && [[ "${DB_URI_VALUE}" != *"127.0.0.1"* ]] && [[ "${DB_URI_VALUE}" != *"localhost"* ]]; then
+    exec sleep infinity
 fi
 
+mkdir -p /run/postgresql
+chown -R postgres:postgres /run/postgresql /appdata/postgres
 PG_VERSION=$(ls /usr/lib/postgresql/ | head -n 1)
-exec s6-setuidgid postgres /usr/lib/postgresql/${PG_VERSION}/bin/postgres -D /appdata/postgres
+exec s6-setuidgid postgres /usr/lib/postgresql/${PG_VERSION}/bin/postgres -D /appdata/postgres -c listen_addresses=127.0.0.1

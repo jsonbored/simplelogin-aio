@@ -1,0 +1,9 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+until nc -z 127.0.0.1 20381 >/dev/null 2>&1; do
+    echo "Waiting for SimpleLogin email handler on port 20381 before starting Postfix..."
+    sleep 2
+done
+
+exec postfix start-fg

@@ -1,104 +1,104 @@
 #!/command/with-contenv bash
-# ==============================================================================
-# 04-configure-postfix.sh
-# Purpose: Dynamically configures Postfix main.cf and pgsql maps based on the
-# SimpleLogin domains and SMTP Relay Modes chosen by the user in Unraid.
-# ==============================================================================
+set -euo pipefail
 
 echo "Configuring Postfix MTA routing..."
 
-# Ensure we have our internal DB credentials
+DB_URI_VALUE="${DB_URI:-$(cat /var/run/s6/container_environment/DB_URI 2>/dev/null || true)}"
+
 if [ -f /appdata/postgres/.sl_internal_pass ]; then
     PG_PASS=$(cat /appdata/postgres/.sl_internal_pass)
     PG_USER="simplelogin"
     PG_HOST="127.0.0.1"
     PG_DB="simplelogin"
-elif [ -n "$DB_URI" ]; then
-    # Parse external DB_URI (postgresql://user:pass@host:port/db)
-    # Basic extraction for mapped use (fallback)
-    PG_USER=$(echo "$DB_URI" | sed -n 's/.*:\/\/\([^:]*\).*/\1/p')
-    PG_PASS=$(echo "$DB_URI" | sed -n 's/.*:\/\/[^:]*:\([^@]*\).*/\1/p')
-    PG_HOST=$(echo "$DB_URI" | sed -n 's/.*@\([^:]*\).*/\1/p')
-    PG_DB=$(echo "$DB_URI" | sed -n 's/.*\/\([^?]*\).*/\1/p')
+elif [ -n "$DB_URI_VALUE" ]; then
+    PG_USER=$(echo "$DB_URI_VALUE" | sed -E 's|.*://([^:/]+).*|\1|')
+    PG_PASS=$(echo "$DB_URI_VALUE" | sed -E 's|.*://[^:]+:([^@]+)@.*|\1|')
+    PG_HOST=$(echo "$DB_URI_VALUE" | sed -E 's|.*@([^:/]+).*|\1|')
+    PG_DB=$(echo "$DB_URI_VALUE" | sed -E 's|.*/([^/?]+).*|\1|')
+else
+    echo "Unable to determine PostgreSQL settings for Postfix."
+    exit 1
 fi
 
-# Write pgsql mapping files so Postfix can query aliases instantly
-cat << EOM > /etc/postfix/pgsql-virtual-mailbox-domains.cf
+cat >/etc/postfix/pgsql-relay-domains.cf <<EOF
 user = $PG_USER
 password = $PG_PASS
 hosts = $PG_HOST
 dbname = $PG_DB
-query = SELECT 1 FROM custom_domain WHERE domain = '%s' AND verified = true UNION SELECT 1 FROM alias WHERE domain = '%s' LIMIT 1;
-EOM
+query = SELECT domain FROM custom_domain WHERE domain = '%s' AND verified = true
+    UNION SELECT '%s' WHERE '%s' = '${EMAIL_DOMAIN}' LIMIT 1;
+EOF
 
-cat << EOM > /etc/postfix/pgsql-virtual-mailbox-maps.cf
+cat >/etc/postfix/pgsql-transport-maps.cf <<EOF
 user = $PG_USER
 password = $PG_PASS
 hosts = $PG_HOST
 dbname = $PG_DB
-query = SELECT 1 FROM alias WHERE email = '%s' LIMIT 1;
-EOM
-
-cat << EOM > /etc/postfix/pgsql-virtual-alias-maps.cf
-user = $PG_USER
-password = $PG_PASS
-hosts = $PG_HOST
-dbname = $PG_DB
-query = SELECT target_address FROM alias_route WHERE alias_id = (SELECT id FROM alias WHERE email = '%s') AND target_status = 'verified';
-EOM
+query = SELECT 'smtp:127.0.0.1:20381' FROM custom_domain WHERE domain = '%s' AND verified = true
+    UNION SELECT 'smtp:127.0.0.1:20381' WHERE '%s' = '${EMAIL_DOMAIN}' LIMIT 1;
+EOF
 
 chmod 640 /etc/postfix/pgsql-*.cf
 chown postfix:postfix /etc/postfix/pgsql-*.cf
 
-# Configure main.cf
+if [ ! -f /etc/ssl/private/ssl-cert-snakeoil.key ] || [ ! -f /etc/ssl/certs/ssl-cert-snakeoil.pem ]; then
+    mkdir -p /etc/ssl/private /etc/ssl/certs
+    openssl req -x509 -nodes -days 3650 -subj "/CN=mail.${EMAIL_DOMAIN}" \
+        -newkey rsa:2048 \
+        -keyout /etc/ssl/private/ssl-cert-snakeoil.key \
+        -out /etc/ssl/certs/ssl-cert-snakeoil.pem >/dev/null 2>&1
+fi
+
+postconf -e "compatibility_level = 2"
 postconf -e "myhostname = mail.${EMAIL_DOMAIN}"
-postconf -e "mydestination = localhost"
-postconf -e "virtual_transport = lmtp:127.0.0.1:20381"
-postconf -e "virtual_mailbox_domains = pgsql:/etc/postfix/pgsql-virtual-mailbox-domains.cf"
-postconf -e "virtual_mailbox_maps = pgsql:/etc/postfix/pgsql-virtual-mailbox-maps.cf"
-postconf -e "virtual_alias_maps = pgsql:/etc/postfix/pgsql-virtual-alias-maps.cf"
+postconf -e "mydomain = ${EMAIL_DOMAIN}"
+postconf -e "myorigin = ${EMAIL_DOMAIN}"
+postconf -e "mydestination ="
+postconf -e "inet_interfaces = all"
+postconf -e "alias_maps = hash:/etc/aliases"
+postconf -e "relay_domains = pgsql:/etc/postfix/pgsql-relay-domains.cf"
+postconf -e "transport_maps = pgsql:/etc/postfix/pgsql-transport-maps.cf"
+postconf -e "mynetworks = 127.0.0.0/8 [::1]/128"
+postconf -e "smtpd_tls_cert_file = /etc/ssl/certs/ssl-cert-snakeoil.pem"
+postconf -e "smtpd_tls_key_file = /etc/ssl/private/ssl-cert-snakeoil.key"
+postconf -e "smtp_tls_security_level = may"
+postconf -e "smtpd_tls_security_level = may"
+postconf -e "smtpd_delay_reject = yes"
+postconf -e "smtpd_helo_required = yes"
+postconf -e "smtpd_helo_restrictions = permit_mynetworks,reject_non_fqdn_helo_hostname,reject_invalid_helo_hostname,permit"
+postconf -e "smtpd_sender_restrictions = permit_mynetworks,reject_non_fqdn_sender,reject_unknown_sender_domain,permit"
+postconf -e "smtpd_recipient_restrictions = reject_unauth_pipelining,reject_non_fqdn_recipient,reject_unknown_recipient_domain,permit_mynetworks,reject_unauth_destination,permit"
 
-# ------------------------------------------------------------------------------
-# RELAY MODE CONFIGURATION (Bypassing ISP Port 25 Blocks)
-# ------------------------------------------------------------------------------
-echo "Applying SMTP Relay configurations..."
-
-# Clear existing sasl_passwd to prevent stale data
+echo "Applying SMTP relay configuration..."
 > /etc/postfix/sasl_passwd
 
-case "$RELAY_MODE" in
-    "direct")
-        echo "Using DIRECT delivery (Assuming outbound port 25 is open)."
+case "${RELAY_MODE:-direct}" in
+    direct)
         postconf -X "relayhost"
         ;;
-    "brevo")
-        echo "Using BREVO relay..."
+    brevo)
         postconf -e "relayhost = [smtp-relay.brevo.com]:587"
-        echo "[smtp-relay.brevo.com]:587 $BREVO_USERNAME:$BREVO_PASSWORD" > /etc/postfix/sasl_passwd
+        echo "[smtp-relay.brevo.com]:587 ${BREVO_USERNAME}:${BREVO_PASSWORD}" > /etc/postfix/sasl_passwd
         ;;
-    "protonmail")
-        echo "Using PROTONMAIL relay..."
-        postconf -e "relayhost = [127.0.0.1]:1025" # Assuming user runs Proton bridge
-        echo "[127.0.0.1]:1025 $SUPPORT_EMAIL:$PROTONMAIL_TOKEN" > /etc/postfix/sasl_passwd
+    protonmail)
+        postconf -e "relayhost = [127.0.0.1]:1025"
+        echo "[127.0.0.1]:1025 ${SUPPORT_EMAIL}:${PROTONMAIL_TOKEN}" > /etc/postfix/sasl_passwd
         ;;
-    "gmail")
-        echo "Using GMAIL relay..."
+    gmail)
         postconf -e "relayhost = [smtp.gmail.com]:587"
-        echo "[smtp.gmail.com]:587 $GMAIL_USERNAME:$GMAIL_APP_PASSWORD" > /etc/postfix/sasl_passwd
+        echo "[smtp.gmail.com]:587 ${GMAIL_USERNAME}:${GMAIL_APP_PASSWORD}" > /etc/postfix/sasl_passwd
         ;;
-    "mailgun")
-        echo "Using MAILGUN relay..."
+    mailgun)
         postconf -e "relayhost = [smtp.mailgun.org]:587"
-        echo "[smtp.mailgun.org]:587 $MAILGUN_USERNAME:$MAILGUN_PASSWORD" > /etc/postfix/sasl_passwd
+        echo "[smtp.mailgun.org]:587 ${MAILGUN_USERNAME}:${MAILGUN_PASSWORD}" > /etc/postfix/sasl_passwd
         ;;
-    "custom")
-        echo "Using CUSTOM relay..."
-        postconf -e "relayhost = $CUSTOM_RELAYHOST"
-        echo "$CUSTOM_RELAYHOST $CUSTOM_USERNAME:$CUSTOM_PASSWORD" > /etc/postfix/sasl_passwd
+    custom)
+        postconf -e "relayhost = ${CUSTOM_RELAYHOST}"
+        echo "${CUSTOM_RELAYHOST} ${CUSTOM_USERNAME}:${CUSTOM_PASSWORD}" > /etc/postfix/sasl_passwd
         ;;
 esac
 
-if [ "$RELAY_MODE" != "direct" ]; then
+if [ "${RELAY_MODE:-direct}" != "direct" ]; then
     postconf -e "smtp_sasl_auth_enable = yes"
     postconf -e "smtp_sasl_security_options = noanonymous"
     postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd"
@@ -107,4 +107,5 @@ if [ "$RELAY_MODE" != "direct" ]; then
     chmod 600 /etc/postfix/sasl_passwd /etc/postfix/sasl_passwd.db
 fi
 
+newaliases >/dev/null 2>&1 || true
 echo "Postfix configuration complete."

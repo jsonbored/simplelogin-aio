@@ -2,6 +2,12 @@
 
 `simplelogin-aio` uses upstream-version-plus-AIO-revision releases such as `v4.79.0-aio.1`.
 
+## Version format
+
+- first wrapper release for upstream `v4.79.0`: `v4.79.0-aio.1`
+- second wrapper-only release on the same upstream: `v4.79.0-aio.2`
+- first wrapper release after upgrading upstream: `v4.80.0-aio.1`
+
 ## Published image tags
 
 Every `main` build publishes:
@@ -13,7 +19,8 @@ Every `main` build publishes:
 
 ## Release flow
 
-1. Trigger **Release / simplelogin-aio** from `main`.
+1. Trigger **Release / SimpleLogin-AIO** from `main` with `action=prepare`.
 2. The workflow computes the next `upstream-aio.N` version and opens a release PR.
-3. Merge that PR into `main`.
-4. After merge, the workflow creates the Git tag and GitHub Release automatically.
+3. Review and merge that PR into `main`.
+4. Trigger **Release / SimpleLogin-AIO** from `main` again with `action=publish`.
+5. The workflow reads the merged `CHANGELOG.md` entry, creates the Git tag, and publishes the GitHub Release.

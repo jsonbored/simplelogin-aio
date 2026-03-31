@@ -1,31 +1,40 @@
-# simplelogin-aio Agent Notes
+# AGENTS.md
 
-`simplelogin-aio` packages the SimpleLogin stack into one Unraid-friendly container.
+This repository is part of a broader portfolio of Unraid-first AIO projects.
 
-## Runtime Shape
+## Repository intent
 
-- SimpleLogin web app
-- Background jobs
-- Inbound email handler
-- Postfix
-- Internal PostgreSQL
-- Internal Redis
+- This repo packages an opinionated, beginner-friendly Unraid AIO deployment.
+- Default behavior should optimize for a reliable first boot on Unraid.
+- Advanced users should retain escape hatches where supported.
 
-## Important Behavior
+## Engineering expectations
 
-- This is still a mail product, so the XML and docs must stay clear about required DNS and domain setup.
-- Default mode should remain self-contained for app/runtime services, but users may still override `DB_URI` and `REDIS_URL`.
-- `/appdata` is the main persistence volume.
-- `/pgp` is optional and should stay an advanced path.
-- Current upstream image support is `linux/amd64` only.
+- Prefer consistency with `unraid-aio-template` over one-off repo behavior.
+- Keep CI and release behavior aligned with the rest of the AIO fleet.
+- Respect protected branches and use PR-based automation for external sync flows.
+- Favor operational clarity over cleverness.
 
-## CI And Publish Policy
+## Release model
 
-- Validation and smoke tests should run on PRs and branch pushes.
-- Publish should happen only from the default branch.
-- GHCR image naming must stay lowercase.
+- Container packages publish automatically from `main`.
+- Formal changelog updates and GitHub Releases are release-driven.
+- Releases use `upstream version + aio revision`, for example `v4.79.0-aio.1`.
+- Keep changelog-friendly Conventional Commit titles and PR titles.
 
-## What To Preserve
+## Unraid expectations
 
-- Keep beginner docs explicit about mail-routing reality; this is not a "just click once and receive internet mail" product.
-- Smoke tests should validate initialization, restart, and persistence without pretending to fully simulate real DNS/mail delivery.
+- Unraid-facing XML/icon assets should stay aligned with `awesome-unraid`.
+- User-facing metadata should remain accurate:
+  - `Project`
+  - `Support`
+  - `TemplateURL`
+  - `Icon`
+  - `Overview`
+  - `Category`
+
+## Documentation expectations
+
+- Be explicit about operational tradeoffs.
+- Do not imply the AIO model removes inherent complexity from the upstream software.
+- Keep beginner defaults simple, but document power-user override paths where they exist.

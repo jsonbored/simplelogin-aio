@@ -1,7 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-## v4.79.0-aio.1 - 2026-03-31
+## v4.79.0-aio.2 - 2026-03-31
 ### Dependency Updates
 - Update non-major infrastructure updates
 - Update docker/setup-buildx-action action to v4

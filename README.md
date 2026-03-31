@@ -46,6 +46,14 @@ Local validation completed on March 29, 2026:
 - internal PostgreSQL, Redis, web, background jobs, and Postfix all validated in the same container
 - workflow hardening added with pinned action SHAs, dependency review, and upstream release tracking
 
+## Releases
+
+`simplelogin-aio` uses upstream-version-plus-AIO-revision releases such as `v4.79.0-aio.1`.
+
+Every `main` build publishes `latest`, the exact pinned upstream version, an explicit packaging line tag, and `sha-<commit>`.
+
+See [docs/releases.md](/Users/shadowbook/Documents/simplelogin-aio/docs/releases.md) for the release workflow details.
+
 ## Support
 
 - Issues: [JSONbored/simplelogin-aio issues](https://github.com/JSONbored/simplelogin-aio/issues)

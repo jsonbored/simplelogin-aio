@@ -152,6 +152,42 @@ def main() -> int:
         )
         return 1
 
+    invalid_option_configs: list[str] = []
+    invalid_pipe_configs: list[str] = []
+    for config in root.findall(".//Config"):
+        name = config.attrib.get("Name", config.attrib.get("Target", "<unnamed>"))
+        if config.findall("Option"):
+            invalid_option_configs.append(name)
+
+        default = config.attrib.get("Default", "")
+        if "|" not in default:
+            continue
+
+        allowed_values = default.split("|")
+        selected_value = (config.text or "").strip()
+        if selected_value not in allowed_values:
+            invalid_pipe_configs.append(
+                f"{name} (selected={selected_value!r}, allowed={allowed_values!r})"
+            )
+
+    if invalid_option_configs:
+        print(
+            "simplelogin-aio.xml uses nested <Option> tags, which are not allowed by the catalog-safe template format:",
+            file=sys.stderr,
+        )
+        for name in invalid_option_configs:
+            print(f"  - {name}", file=sys.stderr)
+        return 1
+
+    if invalid_pipe_configs:
+        print(
+            "simplelogin-aio.xml has pipe-delimited defaults whose selected value is not one of the allowed options:",
+            file=sys.stderr,
+        )
+        for detail in invalid_pipe_configs:
+            print(f"  - {detail}", file=sys.stderr)
+        return 1
+
     print(
         f"simplelogin-aio.xml parsed successfully and includes {len(REQUIRED_TARGETS)} required targets"
     )

@@ -62,8 +62,8 @@ Full changelog and release notes: [url=https://github.com/JSONbored/simplelogin-
   <PostArgs/>
   <CPUset/>
   <DateInstalled/>
-  <DonateText/>
-  <DonateLink/>
+  <DonateText>Support JSONbored on GitHub Sponsors.</DonateText>
+  <DonateLink>https://github.com/sponsors/JSONbored</DonateLink>
   <Description/>
 
   <Networking>

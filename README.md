@@ -29,7 +29,8 @@ If you want the simplest supported path:
 3. Pick a relay mode if your ISP blocks outbound TCP 25.
 4. Forward inbound TCP 25 from your router/firewall to the Unraid host.
 5. Start the container and wait for first-boot initialization to complete.
-6. Add the DNS records from [docs/simplelogin-setup.md](docs/simplelogin-setup.md).
+6. Create your first account in the web UI, then disable registration in Advanced View if you want a private instance.
+7. Add the DNS records from [docs/simplelogin-setup.md](docs/simplelogin-setup.md).
 
 For most users, that is enough to get a working instance online.
 

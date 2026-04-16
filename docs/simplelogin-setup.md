@@ -13,7 +13,7 @@ Set the Unraid template like this:
 
 - `URL=https://app.example.com`
 - `EMAIL_DOMAIN=example.com`
-- `SUPPORT_EMAIL=support@example.com`
+- `SUPPORT_EMAIL=support@example.com` (use a mailbox that already exists)
 
 ## 2. Add DNS Records
 
@@ -65,6 +65,8 @@ The first start can take longer than a normal restart because the internal datab
 After the container comes up:
 
 - open the web UI on port `7777`
+- create your first account in the web UI while registration is still enabled
+- once your first account exists, set `DISABLE_REGISTRATION=true` in Advanced View and restart if you want a private instance
 - confirm `/health` responds
 - check the logs for any Postfix relay or DNS warnings
 - check `/appdata/sl` and `/appdata/postgres` were populated

@@ -1,4 +1,4 @@
-name: Check Upstream Version
+name: Check SimpleLogin Upstream
 
 on:
   schedule:
@@ -36,13 +36,16 @@ jobs:
           chmod +x scripts/check-upstream.py
           ./scripts/check-upstream.py
 
-      - name: Stop if already current
+      - name: Stop if no stable upstream updates are available
         if: ${{ steps.upstream.outputs.updates_available != 'true' }}
-        run: echo "Upstream is already current."
+        run: |
+          echo "No stable upstream version or digest updates are available."
 
       - name: Create update branch
         if: ${{ steps.upstream.outputs.updates_available == 'true' && steps.upstream.outputs.strategy == 'pr' }}
-        run: git checkout -b "codex/upstream-${{ steps.upstream.outputs.latest_version }}"
+        env:
+          BRANCH_NAME: ${{ steps.upstream.outputs.branch_name }}
+        run: git checkout -B "$BRANCH_NAME"
 
       - name: Apply upstream version bump
         if: ${{ steps.upstream.outputs.updates_available == 'true' && steps.upstream.outputs.strategy == 'pr' }}
@@ -51,70 +54,57 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./scripts/check-upstream.py
 
-      - name: Commit upstream version bump
+      - name: Commit upstream update
         if: ${{ steps.upstream.outputs.updates_available == 'true' && steps.upstream.outputs.strategy == 'pr' }}
+        env:
+          PR_TITLE: ${{ steps.upstream.outputs.pr_title }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Dockerfile
-          git commit -m "chore: bump upstream to ${{ steps.upstream.outputs.latest_version }}"
+          git commit -m "$PR_TITLE"
 
       - name: Push update branch
         if: ${{ steps.upstream.outputs.updates_available == 'true' && steps.upstream.outputs.strategy == 'pr' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: git push --force --set-upstream origin "codex/upstream-${{ steps.upstream.outputs.latest_version }}"
+          BRANCH_NAME: ${{ steps.upstream.outputs.branch_name }}
+        run: git push --force --set-upstream origin "$BRANCH_NAME"
 
       - name: Open or update pull request
         if: ${{ steps.upstream.outputs.updates_available == 'true' && steps.upstream.outputs.strategy == 'pr' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_VERSION: ${{ steps.upstream.outputs.current_version }}
+          LATEST_VERSION: ${{ steps.upstream.outputs.latest_version }}
+          CURRENT_DIGEST: ${{ steps.upstream.outputs.current_digest }}
+          LATEST_DIGEST: ${{ steps.upstream.outputs.latest_digest }}
+          RELEASE_NOTES_URL: ${{ steps.upstream.outputs.release_notes_url }}
+          BRANCH_NAME: ${{ steps.upstream.outputs.branch_name }}
+          PR_TITLE: ${{ steps.upstream.outputs.pr_title }}
         run: |
           body_file="$(mktemp)"
           cat > "${body_file}" <<EOF
-          Upstream ${{ steps.upstream.outputs.upstream_name }} has a newer stable version.
+          SimpleLogin upstream has stable updates available.
 
-          - Current pinned upstream version: \`${{ steps.upstream.outputs.current_version }}\`
-          - Latest upstream version: \`${{ steps.upstream.outputs.latest_version }}\`
-          - Release notes: ${{ steps.upstream.outputs.release_notes_url }}
+          - Current pinned upstream version: \`${CURRENT_VERSION}\`
+          - Latest upstream version: \`${LATEST_VERSION}\`
+          - Current pinned upstream digest: \`${CURRENT_DIGEST}\`
+          - Latest upstream digest: \`${LATEST_DIGEST}\`
+          - Release notes: ${RELEASE_NOTES_URL}
 
-          Review checklist:
-          - Confirm upstream release notes do not require XML or env-var changes
-          - Re-run the local smoke test if runtime assumptions changed
-          - Validate DNS / mail-routing guidance still matches upstream expectations
+          This PR was opened automatically by the upstream monitor workflow.
           EOF
 
-          existing_pr="$(gh pr list --head "codex/upstream-${{ steps.upstream.outputs.latest_version }}" --base main --json number --jq '.[0].number')"
+          existing_pr="$(gh pr list --head "$BRANCH_NAME" --base main --json number --jq '.[0].number')"
           if [[ -n "${existing_pr}" ]]; then
             gh pr edit "${existing_pr}" \
-              --title "chore: bump upstream to ${{ steps.upstream.outputs.latest_version }}" \
+              --title "$PR_TITLE" \
               --body-file "${body_file}"
           else
             gh pr create \
               --base main \
-              --head "codex/upstream-${{ steps.upstream.outputs.latest_version }}" \
-              --title "chore: bump upstream to ${{ steps.upstream.outputs.latest_version }}" \
+              --head "$BRANCH_NAME" \
+              --title "$PR_TITLE" \
               --body-file "${body_file}"
-          fi
-
-      - name: Open or update notification issue
-        if: ${{ steps.upstream.outputs.updates_available == 'true' && steps.upstream.outputs.strategy == 'notify' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          issue_title="Upstream update available: ${{ steps.upstream.outputs.latest_version }}"
-          body_file="$(mktemp)"
-          cat > "${body_file}" <<EOF
-          Upstream ${{ steps.upstream.outputs.upstream_name }} has a newer stable version available.
-
-          - Current pinned upstream version: \`${{ steps.upstream.outputs.current_version }}\`
-          - Latest upstream version: \`${{ steps.upstream.outputs.latest_version }}\`
-          - Release notes: ${{ steps.upstream.outputs.release_notes_url }}
-          EOF
-
-          existing_issue="$(gh issue list --state open --search "${issue_title} in:title" --json number --jq '.[0].number')"
-          if [[ -n "${existing_issue}" ]]; then
-            gh issue edit "${existing_issue}" --title "${issue_title}" --body-file "${body_file}"
-          else
-            gh issue create --title "${issue_title}" --body-file "${body_file}" --label enhancement
           fi

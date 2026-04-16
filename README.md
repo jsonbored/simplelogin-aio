@@ -1,62 +1,83 @@
-# simplelogin-aio
+<div align="center">
 
-SimpleLogin packaged as a true All-In-One Unraid container.
+<img src="https://socialify.git.ci/JSONbored/simplelogin-aio/image?custom_description=SimpleLogin+All-in-One+Docker+image+for+Unraid+%E2%80%94+self-host+your+own+email+alias+service+easily.+Highly+configurable+for+power+users.&custom_language=Dockerfile&description=1&font=Raleway&forks=1&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F51910064%3Fs%3D200%26v%3D4&name=1&owner=1&pattern=Brick+Wall&stargazers=1&theme=Dark" alt="simplelogin-aio" width="640" height="320" />
 
-`simplelogin-aio` bundles the SimpleLogin web app, background jobs, inbound email handler, Postfix, PostgreSQL, and Redis into a single container with Unraid-friendly persistence. A normal install only needs one image, one `/appdata` mapping, and the usual domain + DNS setup required by any self-hosted mail stack.
+</div>
 
-## What This Repo Ships
+---
 
-- A single-container `ghcr.io/jsonbored/simplelogin-aio:latest` image
-- Explicit image tags matching the pinned upstream release, plus `latest` and `sha-...`
-- An Unraid CA template at [simplelogin-aio.xml](/tmp/simplelogin-aio/simplelogin-aio.xml)
-- A local smoke test at [scripts/smoke-test.sh](/tmp/simplelogin-aio/scripts/smoke-test.sh)
-- Upstream release monitoring via [upstream.toml](/tmp/simplelogin-aio/upstream.toml) and [scripts/check-upstream.py](/tmp/simplelogin-aio/scripts/check-upstream.py)
-- Automated `awesome-unraid` sync for the XML
+An Unraid-first, single-container deployment of [SimpleLogin](https://github.com/simple-login/app) for people who want the self-hosted alias stack without manually wiring separate Postgres, Redis, and Postfix containers.
 
-## Included Services
+`simplelogin-aio` packages the web UI, background jobs, inbound email handler, Postfix, PostgreSQL, and Redis into one image with persistent Unraid appdata paths. The wrapper is opinionated for a reliable first boot, but it does not hide the real complexity of self-hosted mail: DNS, inbound port 25, SPF/DKIM/DMARC, and sender reputation still matter.
+
+## What This Image Includes
 
 - SimpleLogin web UI on port `7777`
-- Postfix for inbound SMTP on port `25`
-- Embedded PostgreSQL inside the container
-- Embedded Redis inside the container
-- SimpleLogin email handler and background job runner
+- Background job runner
+- Inbound email handler
+- Embedded PostgreSQL
+- Embedded Redis
+- Embedded Postfix for inbound and outbound mail routing
+- Unraid CA template at [simplelogin-aio.xml](simplelogin-aio.xml)
 
-## Important Runtime Notes
+## Beginner Install
 
-- Current upstream SimpleLogin container support is `linux/amd64` only, so `simplelogin-aio` currently publishes amd64-only images.
-- First boot initializes PostgreSQL, writes the runtime `.env`, applies `alembic upgrade head`, and then runs `init_app.py`.
-- `/appdata` is the main persistent volume. `/pgp` is optional for advanced PGP usage.
-- If you already run external PostgreSQL or Redis, set `DB_URI` and `REDIS_URL` in the Unraid template and the internal daemons will stay idle.
-
-## Quick Start
+If you want the simplest supported path:
 
 1. Install the Unraid template.
 2. Set `URL`, `EMAIL_DOMAIN`, `SUPPORT_EMAIL`, and `FLASK_SECRET`.
-3. Pick a relay mode if your ISP blocks outbound port `25`.
-4. Forward inbound TCP port `25` to the Unraid host if you want aliases to receive internet mail.
-5. Review [docs/simplelogin-setup.md](/tmp/simplelogin-aio/docs/simplelogin-setup.md) for the required DNS records and mail-routing checklist.
+3. Pick a relay mode if your ISP blocks outbound TCP 25.
+4. Forward inbound TCP 25 from your router/firewall to the Unraid host.
+5. Start the container and wait for first-boot initialization to complete.
+6. Add the DNS records from [docs/simplelogin-setup.md](docs/simplelogin-setup.md).
+
+For most users, that is enough to get a working instance online.
+
+## Power User Surface
+
+This repo is deliberately not a stripped-down "toy" wrapper. The template now tracks the full upstream self-hosting environment surface from SimpleLogin's official `example.env`, plus AIO-specific relay controls. In Advanced View you can:
+
+- move PostgreSQL or Redis out of the container with `DB_URI` or `REDIS_URL`
+- override alias domain behavior and onboarding rules
+- configure GitHub, Google, Facebook, Proton, and generic OIDC auth
+- enable hCaptcha, HIBP, SpamAssassin, Plausible, and Sentry
+- provide AWS, Paddle, and Coinbase settings
+- mount `/custom-assets` for custom words files, OpenID keys, Paddle public keys, or other file-based upstream settings
+
+The wrapper still defaults to the internal bundled services so beginners are not forced into a multi-container setup on day one.
+
+## Runtime Notes
+
+- Upstream SimpleLogin container support is currently `linux/amd64` only, so this wrapper publishes amd64-only images.
+- First boot initializes PostgreSQL when `DB_URI` is unset, starts Redis when `REDIS_URL` is unset, writes the runtime `.env`, applies `alembic upgrade head`, then runs `init_app.py`.
+- `/appdata` is the main persistent volume. It stores PostgreSQL, Redis, uploads, DKIM keys, generated OpenID keys, and other runtime state.
+- `/pgp` is the optional persistent GnuPG home.
+- `/custom-assets` is an optional advanced mount for file-based upstream settings.
+- DKIM keys are persisted under `/appdata/dkim` and symlinked into the in-container paths the app expects.
+
+## Publishing and Releases
+
+- Wrapper releases use the upstream version plus an AIO revision, such as `v4.80.1-aio.1`.
+- The repo monitors upstream releases and image digest changes through [upstream.toml](upstream.toml) and [scripts/check-upstream.py](scripts/check-upstream.py).
+- Release notes are generated with `git-cliff`.
+- The Unraid template `<Changes>` block is synced from `CHANGELOG.md` during release preparation.
+- `main` publishes `latest`, the pinned upstream version tag, an explicit AIO packaging line tag, and `sha-<commit>`.
+- When Docker Hub credentials are configured, the same publish flow can push Docker Hub tags in parallel with GHCR.
+
+See [docs/releases.md](docs/releases.md) for the release workflow details.
 
 ## Validation
 
-Local validation completed on March 29, 2026:
+Local validation is built around:
 
-- explicit `linux/amd64` Docker build succeeded
-- full local smoke test passed end-to-end
-- restart and persistence coverage added to the smoke test
-- internal PostgreSQL, Redis, web, background jobs, and Postfix all validated in the same container
-- workflow hardening added with pinned action SHAs, dependency review, and upstream release tracking
-
-## Releases
-
-`simplelogin-aio` uses upstream-version-plus-AIO-revision releases such as `v4.79.0-aio.1`.
-
-Every `main` build publishes `latest`, the exact pinned upstream version, an explicit packaging line tag, and `sha-<commit>`.
-
-See [docs/releases.md](/Users/shadowbook/Documents/simplelogin-aio/docs/releases.md) for the release workflow details.
+- XML validation for the audited template surface
+- shell and Python syntax checks
+- local Docker build on `linux/amd64`
+- end-to-end smoke test coverage for first boot, health, SMTP readiness, restart, and persistence
 
 ## Support
 
-- Issues: [JSONbored/simplelogin-aio issues](https://github.com/JSONbored/simplelogin-aio/issues)
+- Repo issues: [JSONbored/simplelogin-aio issues](https://github.com/JSONbored/simplelogin-aio/issues)
 - Upstream app: [simple-login/app](https://github.com/simple-login/app)
 
 ## Funding

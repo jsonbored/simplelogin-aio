@@ -1,4 +1,5 @@
 #!/command/with-contenv bash
+# shellcheck shell=bash
 set -euo pipefail
 
 RED='\033[0;31m'

@@ -27,6 +27,8 @@ At minimum, add:
 
 SimpleLogin will also need DKIM once the container has booted and generated its keys.
 
+After first boot, the wrapper stores DKIM material under `/appdata/dkim` and symlinks the active keys into the in-container paths SimpleLogin expects.
+
 ## 3. Forward Mail Traffic
 
 Inbound internet mail must reach the Unraid host:
@@ -42,6 +44,8 @@ If your ISP blocks outbound port `25`, choose a relay provider in the template:
 - `custom`
 
 If your ISP does not block outbound mail, `direct` can work.
+
+Advanced users can also skip the wrapper relay shortcuts and use the expanded Advanced View settings for direct upstream env overrides.
 
 ## 4. Start the Container
 
@@ -71,5 +75,13 @@ You can point the container at external services:
 
 - set `DB_URI` to skip the internal PostgreSQL daemon
 - set `REDIS_URL` to skip the internal Redis daemon
+
+The template also exposes the full upstream `example.env` feature surface in Advanced View, including:
+
+- alias domain behavior and onboarding controls
+- social/OIDC auth providers
+- hCaptcha, HIBP, SpamAssassin, Plausible, and Sentry
+- AWS, Paddle, Coinbase, and file-path based advanced settings
+- optional `/custom-assets` mounting for custom words files or key material
 
 This keeps the Unraid template flexible without forcing beginners into a multi-container setup.

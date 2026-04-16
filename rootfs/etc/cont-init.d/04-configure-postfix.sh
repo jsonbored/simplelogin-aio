@@ -1,4 +1,5 @@
 #!/command/with-contenv bash
+# shellcheck shell=bash
 set -euo pipefail
 
 echo "Configuring Postfix MTA routing..."
@@ -70,7 +71,7 @@ postconf -e "smtpd_sender_restrictions = permit_mynetworks,reject_non_fqdn_sende
 postconf -e "smtpd_recipient_restrictions = reject_unauth_pipelining,reject_non_fqdn_recipient,reject_unknown_recipient_domain,permit_mynetworks,reject_unauth_destination,permit"
 
 echo "Applying SMTP relay configuration..."
-> /etc/postfix/sasl_passwd
+: > /etc/postfix/sasl_passwd
 
 case "${RELAY_MODE:-direct}" in
     direct)
@@ -81,8 +82,8 @@ case "${RELAY_MODE:-direct}" in
         echo "[smtp-relay.brevo.com]:587 ${BREVO_USERNAME}:${BREVO_PASSWORD}" > /etc/postfix/sasl_passwd
         ;;
     protonmail)
-        postconf -e "relayhost = [127.0.0.1]:1025"
-        echo "[127.0.0.1]:1025 ${SUPPORT_EMAIL}:${PROTONMAIL_TOKEN}" > /etc/postfix/sasl_passwd
+        postconf -e "relayhost = [smtp.protonmail.ch]:587"
+        echo "[smtp.protonmail.ch]:587 ${SUPPORT_EMAIL}:${PROTONMAIL_TOKEN}" > /etc/postfix/sasl_passwd
         ;;
     gmail)
         postconf -e "relayhost = [smtp.gmail.com]:587"

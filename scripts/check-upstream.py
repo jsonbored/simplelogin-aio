@@ -89,6 +89,47 @@ def latest_github_release(repo: str, stable_only: bool) -> str:
     return sorted(releases, key=version_sort_key)[-1]
 
 
+def dockerhub_digest_for_tag(image: str, tag: str) -> str:
+    token_url = (
+        "https://auth.docker.io/token"
+        f"?service=registry.docker.io&scope=repository:{image}:pull"
+    )
+    token_data = http_json(token_url)
+    if not isinstance(token_data, dict) or not token_data.get("token"):
+        fail(f"Could not get Docker Hub token for {image}")
+
+    request = urllib.request.Request(
+        f"https://registry-1.docker.io/v2/{image}/manifests/{tag}",
+        method="HEAD",
+        headers={
+            "Accept": ",".join(
+                [
+                    "application/vnd.oci.image.index.v1+json",
+                    "application/vnd.oci.image.manifest.v1+json",
+                    "application/vnd.docker.distribution.manifest.list.v2+json",
+                    "application/vnd.docker.distribution.manifest.v2+json",
+                ]
+            ),
+            "Authorization": f"Bearer {token_data['token']}",
+            "User-Agent": "jsonbored-simplelogin-aio",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            digest = response.headers.get("docker-content-digest", "").strip()
+            if digest:
+                return digest
+    except urllib.error.HTTPError as exc:
+        fail(
+            f"HTTP error while requesting Docker Hub manifest for {image}:{tag}: "
+            f"{exc.code} {exc.reason}"
+        )
+    except urllib.error.URLError as exc:
+        fail(f"Network error while requesting Docker Hub manifest for {image}:{tag}: {exc.reason}")
+
+    fail(f"Could not determine digest for Docker Hub image {image}:{tag}")
+
+
 def read_local_version(config: dict[str, object]) -> str:
     version_source = str(config.get("version_source", "")).strip()
     version_key = str(config.get("version_key", "")).strip()
@@ -100,6 +141,19 @@ def read_local_version(config: dict[str, object]) -> str:
         if match:
             return match.group(1)
     fail(f"Could not find ARG {version_key} in Dockerfile")
+
+
+def read_local_digest(config: dict[str, object]) -> str:
+    digest_source = str(config.get("digest_source", "")).strip()
+    digest_key = str(config.get("digest_key", "")).strip()
+    if digest_source != "dockerfile-arg":
+        fail(f"Unsupported digest_source: {digest_source}")
+    pattern = re.compile(rf"^\s*ARG\s+{re.escape(digest_key)}=(.+?)\s*$")
+    for line in DOCKERFILE.read_text(encoding="utf-8").splitlines():
+        match = pattern.match(line)
+        if match:
+            return match.group(1)
+    fail(f"Could not find ARG {digest_key} in Dockerfile")
 
 
 def write_local_version(config: dict[str, object], new_version: str) -> None:
@@ -120,6 +174,27 @@ def write_local_version(config: dict[str, object], new_version: str) -> None:
             updated_lines.append(line)
     if not changed:
         fail(f"Could not update ARG {version_key} in Dockerfile")
+    DOCKERFILE.write_text("\n".join(updated_lines) + "\n", encoding="utf-8")
+
+
+def write_local_digest(config: dict[str, object], new_digest: str) -> None:
+    digest_source = str(config.get("digest_source", "")).strip()
+    digest_key = str(config.get("digest_key", "")).strip()
+    if digest_source != "dockerfile-arg":
+        fail(f"Unsupported digest_source: {digest_source}")
+
+    pattern = re.compile(rf"^(\s*ARG\s+{re.escape(digest_key)}=).+?(\s*)$")
+    updated_lines: list[str] = []
+    changed = False
+    for line in DOCKERFILE.read_text(encoding="utf-8").splitlines():
+        match = pattern.match(line)
+        if match:
+            updated_lines.append(f"{match.group(1)}{new_digest}{match.group(2)}")
+            changed = True
+        else:
+            updated_lines.append(line)
+    if not changed:
+        fail(f"Could not update ARG {digest_key} in Dockerfile")
     DOCKERFILE.write_text("\n".join(updated_lines) + "\n", encoding="utf-8")
 
 
@@ -168,16 +243,22 @@ def main() -> None:
     upstream_type = str(upstream.get("type", "")).strip()
     stable_only = bool(upstream.get("stable_only", True))
     current_version = read_local_version(upstream)
+    current_digest = read_local_digest(upstream)
 
     if upstream_type == "github-release":
-      latest_version = latest_github_release(str(upstream.get("repo", "")).strip(), stable_only)
+        latest_version = latest_github_release(str(upstream.get("repo", "")).strip(), stable_only)
     else:
-      fail(f"Unsupported upstream type: {upstream_type}")
+        fail(f"Unsupported upstream type: {upstream_type}")
 
-    updates_available = latest_version != current_version
+    image = str(upstream.get("image", "")).strip()
+    if not image:
+        fail("Invalid upstream.toml: missing [upstream].image")
+    latest_digest = dockerhub_digest_for_tag(image, latest_version)
+    updates_available = latest_version != current_version or latest_digest != current_digest
 
     if os.environ.get("WRITE_UPSTREAM_VERSION") == "true" and updates_available:
         write_local_version(upstream, latest_version)
+        write_local_digest(upstream, latest_digest)
 
     release_notes = ""
     if isinstance(notifications, dict):
@@ -185,14 +266,24 @@ def main() -> None:
     if not release_notes and upstream.get("repo"):
         release_notes = f"https://github.com/{upstream['repo']}/releases"
 
+    branch_name = f"codex/upstream-{latest_version}"
+    pr_title = f"chore(deps): bump upstream to {latest_version}"
+    if latest_version == current_version and latest_digest != current_digest:
+        branch_name = f"codex/upstream-{latest_version}-digest-refresh"
+        pr_title = f"chore(deps): refresh upstream digest for {latest_version}"
+
     write_outputs(
         {
             "current_version": current_version,
             "latest_version": latest_version,
+            "current_digest": current_digest,
+            "latest_digest": latest_digest,
             "updates_available": "true" if updates_available else "false",
             "strategy": str(upstream.get("strategy", "pr")).strip() or "pr",
             "upstream_name": str(upstream.get("name", "")).strip(),
             "release_notes_url": release_notes,
+            "branch_name": branch_name,
+            "pr_title": pr_title,
         }
     )
 

@@ -2,8 +2,11 @@
 name = "SimpleLogin"
 type = "github-release"
 repo = "simple-login/app"
+image = "simplelogin/app-ci"
 version_source = "dockerfile-arg"
 version_key = "UPSTREAM_VERSION"
+digest_source = "dockerfile-arg"
+digest_key = "UPSTREAM_IMAGE_DIGEST"
 strategy = "pr"
 stable_only = true
 

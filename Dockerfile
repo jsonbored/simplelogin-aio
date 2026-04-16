@@ -37,6 +37,7 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y --no-install
     echo "${s6_sha}  /tmp/s6-overlay-arch.tar.xz" | sha256sum -c - && \
     tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz && \
     tar -C / -Jxpf /tmp/s6-overlay-arch.tar.xz && \
+    python3 -c "from pathlib import Path; env_py = Path('/code/migrations/env.py'); old = \"config.set_main_option('sqlalchemy.url', DB_URI)\\n\"; new = \"config.set_main_option('sqlalchemy.url', DB_URI.replace('%', '%%'))\\n\"; contents = env_py.read_text(); old in contents or (_ for _ in ()).throw(SystemExit('Unable to patch /code/migrations/env.py for escaped DB_URI handling')); env_py.write_text(contents.replace(old, new, 1))" && \
     useradd --system --create-home --home-dir /home/simplelogin --shell /usr/sbin/nologin simplelogin && \
     mkdir -p /appdata/postgres /appdata/redis /appdata/dkim /appdata/sl/upload /pgp /custom-assets /run/postgresql && \
     chown -R postgres:postgres /appdata/postgres /run/postgresql && \

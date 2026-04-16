@@ -85,3 +85,21 @@ The template also exposes the full upstream `example.env` feature surface in Adv
 - optional `/custom-assets` mounting for custom words files or key material
 
 This keeps the Unraid template flexible without forcing beginners into a multi-container setup.
+
+## 7. Features That Do Not Need Extra Containers
+
+SimpleLogin's official docs also cover several features that are handled inside the app itself after deployment. These do not require extra database, cache, or helper containers in this AIO image:
+
+- custom domains and additional alias domains
+- catch-all and mailbox routing behavior
+- reverse aliases and reply handling
+- multiple mailboxes
+- alias directories and other UI-managed account features
+
+Those are application features, not separate infrastructure services. The AIO image already bundles the core self-hosted infrastructure pieces that normally force extra containers:
+
+- PostgreSQL
+- Redis
+- Postfix
+
+So for the normal self-hosted path, users should not need to stand up additional DB/cache/mail-routing containers unless they deliberately choose external overrides like `DB_URI` or `REDIS_URL`.

@@ -46,6 +46,19 @@ This repo is deliberately not a stripped-down "toy" wrapper. The template now tr
 
 The wrapper still defaults to the internal bundled services so beginners are not forced into a multi-container setup on day one.
 
+## What You Get In-App
+
+The official SimpleLogin docs describe several major capabilities that are configured inside the running app after deployment, not through extra container env vars. Once this container is up, those app features are still available without adding more containers for core infrastructure:
+
+- custom domains and alias domains
+- catch-all behavior and mailbox routing
+- reverse aliases / reply flow
+- multiple mailboxes
+- alias directories and organization features exposed by the app UI
+- login methods such as social auth, Proton auth, and generic OIDC when their related env vars are set
+
+In other words, the template is responsible for exposing deployment-time and integration-time configuration, while the SimpleLogin web UI still handles normal application-level features after first boot.
+
 ## Runtime Notes
 
 - Upstream SimpleLogin container support is currently `linux/amd64` only, so this wrapper publishes amd64-only images.

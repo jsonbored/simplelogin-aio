@@ -52,3 +52,8 @@ normalize_simplelogin_presence_env_vars() {
         normalize_presence_env_var "$var_name"
     done
 }
+
+escape_configparser_value() {
+    local value="${1:-}"
+    printf '%s' "${value//%/%%}"
+}

@@ -6,16 +6,48 @@ echo "Configuring Postfix MTA routing..."
 
 DB_URI_VALUE="${DB_URI:-$(cat /var/run/s6/container_environment/DB_URI 2>/dev/null || true)}"
 
+parse_postgres_uri() {
+    DB_URI_TO_PARSE="$1" python3 <<'PY'
+import os
+from urllib.parse import urlparse, unquote
+
+uri = os.environ["DB_URI_TO_PARSE"]
+parsed = urlparse(uri)
+
+if parsed.scheme not in {"postgresql", "postgres"}:
+    raise SystemExit(f"Unsupported DB_URI scheme for Postfix configuration: {parsed.scheme or '<missing>'}")
+
+if not parsed.hostname or not parsed.path or parsed.path == "/":
+    raise SystemExit("DB_URI must include host and database name for Postfix configuration")
+
+username = parsed.username or ""
+password = parsed.password or ""
+database = parsed.path.lstrip("/")
+
+if not username or not password or not database:
+    raise SystemExit("DB_URI must include username, password, and database name for Postfix configuration")
+
+host = parsed.hostname
+port = f":{parsed.port}" if parsed.port else ""
+
+print(unquote(username))
+print(unquote(password))
+print(f"{host}{port}")
+print(unquote(database))
+PY
+}
+
 if [ -f /appdata/postgres/.sl_internal_pass ]; then
     PG_PASS=$(cat /appdata/postgres/.sl_internal_pass)
     PG_USER="simplelogin"
     PG_HOST="127.0.0.1"
     PG_DB="simplelogin"
 elif [ -n "$DB_URI_VALUE" ]; then
-    PG_USER=$(echo "$DB_URI_VALUE" | sed -E 's|.*://([^:/]+).*|\1|')
-    PG_PASS=$(echo "$DB_URI_VALUE" | sed -E 's|.*://[^:]+:([^@]+)@.*|\1|')
-    PG_HOST=$(echo "$DB_URI_VALUE" | sed -E 's|.*@([^:/]+).*|\1|')
-    PG_DB=$(echo "$DB_URI_VALUE" | sed -E 's|.*/([^/?]+).*|\1|')
+    mapfile -t parsed_db_uri < <(parse_postgres_uri "$DB_URI_VALUE")
+    PG_USER="${parsed_db_uri[0]}"
+    PG_PASS="${parsed_db_uri[1]}"
+    PG_HOST="${parsed_db_uri[2]}"
+    PG_DB="${parsed_db_uri[3]}"
 else
     echo "Unable to determine PostgreSQL settings for Postfix."
     exit 1

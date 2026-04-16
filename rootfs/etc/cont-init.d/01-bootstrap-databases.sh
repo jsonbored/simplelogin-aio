@@ -1,13 +1,14 @@
 #!/command/with-contenv bash
+# shellcheck shell=bash
 set -euo pipefail
 
 echo "Checking internal database requirements..."
 
 chmod 755 /appdata
-mkdir -p /appdata/postgres /appdata/redis /appdata/dkim /appdata/sl/upload /pgp /run/postgresql
+mkdir -p /appdata/postgres /appdata/redis /appdata/dkim /appdata/sl/upload /pgp /custom-assets /run/postgresql
 chown -R redis:redis /appdata/redis
 chown -R postgres:postgres /appdata/postgres /run/postgresql
-chown -R simplelogin:simplelogin /appdata/sl /pgp
+chown -R simplelogin:simplelogin /appdata/sl /pgp /custom-assets
 chmod 755 /appdata/sl
 chmod 700 /appdata/postgres /appdata/redis /pgp
 chmod 700 /pgp
@@ -21,7 +22,11 @@ if [ -z "$DB_URI_VALUE" ]; then
 
     if [ ! -f "/appdata/postgres/PG_VERSION" ]; then
         echo "Initializing bare Postgres cluster..."
-        PG_BIN_DIR=$(ls -d /usr/lib/postgresql/*/bin | head -n 1)
+        PG_BIN_DIR="$(find /usr/lib/postgresql -mindepth 2 -maxdepth 2 -type d -name bin | sort | head -n 1)"
+        if [ -z "$PG_BIN_DIR" ]; then
+            echo "Unable to locate PostgreSQL binaries under /usr/lib/postgresql."
+            exit 1
+        fi
         su -s /bin/bash postgres -c "$PG_BIN_DIR/initdb -D /appdata/postgres"
 
         INTERNAL_PG_PASS=$(openssl rand -hex 24)

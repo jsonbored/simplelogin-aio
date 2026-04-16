@@ -1,4 +1,5 @@
 #!/command/with-contenv bash
+# shellcheck shell=bash
 
 PGP_DIR="/pgp"
 PRIVATE_KEY_FILE="${PGP_DIR}/server_private_key.asc"

@@ -1,4 +1,5 @@
 #!/command/with-contenv bash
+# shellcheck shell=bash
 # ==============================================================================
 # 02-dkim-setup.sh
 # Purpose: Auto-generates DKIM (DomainKeys Identified Mail) keys if they do not exist.
@@ -13,7 +14,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-DKIM_DIR="/dkim"
+DKIM_DIR="/appdata/dkim"
 PRIVATE_KEY="$DKIM_DIR/dkim.key"
 PUBLIC_KEY="$DKIM_DIR/dkim.pub.key"
 DNS_RECORD_FILE="$DKIM_DIR/dkim-dns-record.txt"
@@ -26,10 +27,10 @@ mkdir -p "$DKIM_DIR"
 if [ -f "$PRIVATE_KEY" ]; then
     echo -e "${GREEN}DKIM keys found at $PRIVATE_KEY. Skipping generation.${NC}"
 else
-    echo -e "${YELLOW}No DKIM keys found. Generating new 1024-bit RSA key pair...${NC}"
+    echo -e "${YELLOW}No DKIM keys found. Generating new 2048-bit RSA key pair...${NC}"
     
     # Generate private key
-    if ! openssl genrsa -out "$PRIVATE_KEY" 1024 2>/dev/null; then
+    if ! openssl genrsa -out "$PRIVATE_KEY" 2048 2>/dev/null; then
         echo -e "${RED}[ERROR] Failed to generate DKIM private key!${NC}"
         exit 1
     fi

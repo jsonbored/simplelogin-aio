@@ -27,6 +27,8 @@ At minimum, add:
 
 SimpleLogin will also need DKIM once the container has booted and generated its keys.
 
+After first boot, the wrapper stores DKIM material under `/appdata/dkim` and symlinks the active keys into the in-container paths SimpleLogin expects.
+
 ## 3. Forward Mail Traffic
 
 Inbound internet mail must reach the Unraid host:
@@ -42,6 +44,8 @@ If your ISP blocks outbound port `25`, choose a relay provider in the template:
 - `custom`
 
 If your ISP does not block outbound mail, `direct` can work.
+
+Advanced users can also skip the wrapper relay shortcuts and use the expanded Advanced View settings for direct upstream env overrides.
 
 ## 4. Start the Container
 
@@ -72,4 +76,30 @@ You can point the container at external services:
 - set `DB_URI` to skip the internal PostgreSQL daemon
 - set `REDIS_URL` to skip the internal Redis daemon
 
+The template also exposes the full upstream `example.env` feature surface in Advanced View, including:
+
+- alias domain behavior and onboarding controls
+- social/OIDC auth providers
+- hCaptcha, HIBP, SpamAssassin, Plausible, and Sentry
+- AWS, Paddle, Coinbase, and file-path based advanced settings
+- optional `/custom-assets` mounting for custom words files or key material
+
 This keeps the Unraid template flexible without forcing beginners into a multi-container setup.
+
+## 7. Features That Do Not Need Extra Containers
+
+SimpleLogin's official docs also cover several features that are handled inside the app itself after deployment. These do not require extra database, cache, or helper containers in this AIO image:
+
+- custom domains and additional alias domains
+- catch-all and mailbox routing behavior
+- reverse aliases and reply handling
+- multiple mailboxes
+- alias directories and other UI-managed account features
+
+Those are application features, not separate infrastructure services. The AIO image already bundles the core self-hosted infrastructure pieces that normally force extra containers:
+
+- PostgreSQL
+- Redis
+- Postfix
+
+So for the normal self-hosted path, users should not need to stand up additional DB/cache/mail-routing containers unless they deliberately choose external overrides like `DB_URI` or `REDIS_URL`.

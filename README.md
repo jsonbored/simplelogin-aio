@@ -98,6 +98,8 @@ Local validation is built around:
 If this work saves you time, support it here:
 
 - [GitHub Sponsors](https://github.com/sponsors/JSONbored)
+- [Ko-fi](https://ko-fi.com/jsonbored)
+- [Buy Me a Coffee](https://buymeacoffee.com/jsonbored)
 
 ## Star History
 

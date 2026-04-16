@@ -28,6 +28,16 @@ on:
         required: false
         default: false
         type: boolean
+      publish_images:
+        description: "Publish images to GHCR/Docker Hub"
+        required: false
+        default: false
+        type: boolean
+      sync_awesome_unraid:
+        description: "Open or refresh the awesome-unraid sync pull request"
+        required: false
+        default: false
+        type: boolean
       aio_track_override:
         description: "Optional package line override (example: aio-v3)"
         required: false
@@ -71,11 +81,13 @@ jobs:
           GITHUB_SHA_VALUE: ${{ github.sha }}
           GITHUB_REF_VALUE: ${{ github.ref }}
           RUN_SMOKE_TEST_INPUT: ${{ github.event.inputs.run_smoke_test || '' }}
+          PUBLISH_IMAGES_INPUT: ${{ github.event.inputs.publish_images || '' }}
         run: |
           python3 scripts/ci_flags.py \
             --event-name "${EVENT_NAME}" \
             --ref "${GITHUB_REF_VALUE}" \
-            --run-smoke-test-input "${RUN_SMOKE_TEST_INPUT}" >> "${GITHUB_OUTPUT}"
+            --run-smoke-test-input "${RUN_SMOKE_TEST_INPUT}" \
+            --publish-images-input "${PUBLISH_IMAGES_INPUT}" >> "${GITHUB_OUTPUT}"
 
           if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
             echo "build_related=true" >> "${GITHUB_OUTPUT}"
@@ -418,7 +430,7 @@ jobs:
             io.jsonbored.wrapper.track=${{ steps.prep.outputs.aio_track }}
 
   sync-awesome-unraid:
-    if: ${{ needs.detect-changes.outputs.xml_related == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if: ${{ needs.detect-changes.outputs.xml_related == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.sync_awesome_unraid == 'true')) }}
     needs:
       - detect-changes
       - validate-template

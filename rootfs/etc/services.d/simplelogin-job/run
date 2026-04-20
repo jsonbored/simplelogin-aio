@@ -2,6 +2,8 @@
 # shellcheck shell=bash
 set -euo pipefail
 source /etc/simplelogin-aio/env-helpers.sh
+normalize_simplelogin_blank_sensitive_env_vars
+normalize_simplelogin_compat_env_vars
 normalize_simplelogin_presence_env_vars
 
 until curl -fsS http://127.0.0.1:7777/health >/dev/null; do
@@ -10,4 +12,4 @@ until curl -fsS http://127.0.0.1:7777/health >/dev/null; do
 done
 
 cd /code || exit 1
-exec python job_runner.py
+exec_with_simplelogin_sanitized_env python job_runner.py

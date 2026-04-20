@@ -1,5 +1,6 @@
 #!/command/with-contenv bash
 # shellcheck shell=bash
+source /etc/simplelogin-aio/env-helpers.sh
 
 PGP_DIR="/pgp"
 PRIVATE_KEY_FILE="${PGP_DIR}/server_private_key.asc"
@@ -49,7 +50,7 @@ EOL
         echo "Existing PGP Server Key found at ${PRIVATE_KEY_FILE}. Skipping generation."
     fi
 
-    echo "$PRIVATE_KEY_FILE" > /var/run/s6/container_environment/PGP_SENDER_PRIVATE_KEY_PATH
+    sync_env_value "PGP_SENDER_PRIVATE_KEY_PATH" "$PRIVATE_KEY_FILE"
 else
     echo "PGP Auto-Generation disabled. Skipping server key creation."
 fi

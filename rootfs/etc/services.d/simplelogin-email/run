@@ -6,10 +6,10 @@ normalize_simplelogin_blank_sensitive_env_vars
 normalize_simplelogin_compat_env_vars
 normalize_simplelogin_presence_env_vars
 
-until curl -fsS http://127.0.0.1:7777/health >/dev/null; do
+until curl -fsS http://127.0.0.1:7777/health >/dev/null 2>&1; do
     echo "Waiting for SimpleLogin web service before starting email handler..."
     sleep 2
 done
 
 cd /code || exit 1
-exec_with_simplelogin_sanitized_env python email_handler.py
+exec_as_simplelogin_with_sanitized_env python email_handler.py

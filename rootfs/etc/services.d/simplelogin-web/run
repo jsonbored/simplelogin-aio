@@ -41,14 +41,14 @@ wait_for_postgres
 wait_for_redis
 
 echo "Running SimpleLogin database migrations..."
-run_with_simplelogin_sanitized_env alembic upgrade head
+run_as_simplelogin_with_sanitized_env alembic upgrade head
 
 MARKER_FILE="/appdata/sl/.initialized"
 if [ ! -f "$MARKER_FILE" ]; then
     echo "Running SimpleLogin first-run initialization..."
-    run_with_simplelogin_sanitized_env python init_app.py
+    run_as_simplelogin_with_sanitized_env python init_app.py
     touch "$MARKER_FILE"
 fi
 
 WORKERS="${GUNICORN_WORKERS:-2}"
-exec_with_simplelogin_sanitized_env gunicorn --bind 0.0.0.0:7777 --workers "$WORKERS" wsgi:app
+exec_as_simplelogin_with_sanitized_env gunicorn --bind 0.0.0.0:7777 --workers "$WORKERS" wsgi:app

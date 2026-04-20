@@ -2,6 +2,7 @@
 # shellcheck shell=bash
 set -euo pipefail
 
+# trunk-ignore(shellcheck/SC1091)
 source /etc/simplelogin-aio/env-helpers.sh
 
 normalize_simplelogin_blank_sensitive_env_vars

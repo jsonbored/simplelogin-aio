@@ -2,6 +2,11 @@
 # shellcheck shell=bash
 set -euo pipefail
 
+source /etc/simplelogin-aio/env-helpers.sh
+normalize_simplelogin_blank_sensitive_env_vars
+normalize_simplelogin_compat_env_vars
+normalize_simplelogin_presence_env_vars
+
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 GREEN='\033[0;32m'

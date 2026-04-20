@@ -1,6 +1,7 @@
 #!/command/with-contenv bash
 # shellcheck shell=bash
 set -euo pipefail
+source /etc/simplelogin-aio/env-helpers.sh
 
 CYAN='\033[1;36m'
 GREEN='\033[0;32m'
@@ -26,6 +27,6 @@ if [ "${ENABLE_OIDC_SERVER:-0}" = "1" ]; then
         echo "Existing JWT keys found. Skipping generation."
     fi
 
-    printf '%s\n' "$PRIVATE_KEY_FILE" > /var/run/s6/container_environment/OPENID_PRIVATE_KEY_PATH
-    printf '%s\n' "$PUBLIC_KEY_FILE" > /var/run/s6/container_environment/OPENID_PUBLIC_KEY_PATH
+    sync_env_value "OPENID_PRIVATE_KEY_PATH" "$PRIVATE_KEY_FILE"
+    sync_env_value "OPENID_PUBLIC_KEY_PATH" "$PUBLIC_KEY_FILE"
 fi

@@ -1,6 +1,7 @@
 #!/command/with-contenv bash
 # shellcheck shell=bash
 set -euo pipefail
+source /etc/simplelogin-aio/env-helpers.sh
 
 echo "Checking internal database requirements..."
 
@@ -55,5 +56,5 @@ fi
 
 REDIS_URL_VALUE="${REDIS_URL:-redis://127.0.0.1:6379/0}"
 
-printf '%s\n' "$DB_URI_VALUE" > /var/run/s6/container_environment/DB_URI
-printf '%s\n' "$REDIS_URL_VALUE" > /var/run/s6/container_environment/REDIS_URL
+sync_env_value "DB_URI" "$DB_URI_VALUE"
+sync_env_value "REDIS_URL" "$REDIS_URL_VALUE"

@@ -164,6 +164,12 @@ def main() -> int:
             continue
 
         allowed_values = default.split("|")
+        if any(value == "" for value in allowed_values):
+            invalid_pipe_configs.append(
+                f"{name} (allowed={allowed_values!r}, empty pipe options are not allowed)"
+            )
+            continue
+
         selected_value = (config.text or "").strip()
         if selected_value not in allowed_values:
             invalid_pipe_configs.append(

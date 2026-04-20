@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import sys
+
+# trunk-ignore(bandit/B405)
+# nosec B405 - this validator reads a trusted local repository XML file only
 import xml.etree.ElementTree as ET
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE_PATH = ROOT / "simplelogin-aio.xml"
@@ -120,7 +122,8 @@ REQUIRED_CHANGELOG_LINK = "https://github.com/JSONbored/simplelogin-aio/releases
 
 
 def main() -> int:
-    tree = ET.parse(TEMPLATE_PATH)
+    # trunk-ignore(bandit/B314)
+    tree = ET.parse(TEMPLATE_PATH)  # nosec B314 - trusted local template file only
     root = tree.getroot()
 
     targets = {
@@ -131,7 +134,10 @@ def main() -> int:
 
     missing = sorted(REQUIRED_TARGETS - targets)
     if missing:
-        print("simplelogin-aio.xml is missing required upstream/runtime targets:", file=sys.stderr)
+        print(
+            "simplelogin-aio.xml is missing required upstream/runtime targets:",
+            file=sys.stderr,
+        )
         for target in missing:
             print(f"  - {target}", file=sys.stderr)
         return 1
@@ -143,7 +149,10 @@ def main() -> int:
 
     changes = (root.findtext("Changes") or "").strip()
     if not changes:
-        print("simplelogin-aio.xml is missing a non-empty <Changes> section", file=sys.stderr)
+        print(
+            "simplelogin-aio.xml is missing a non-empty <Changes> section",
+            file=sys.stderr,
+        )
         return 1
     if REQUIRED_CHANGELOG_LINK not in changes:
         print(

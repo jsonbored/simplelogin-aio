@@ -27,10 +27,11 @@ If you want the simplest supported path:
 1. Install the Unraid template.
 2. Set `URL`, `EMAIL_DOMAIN`, `SUPPORT_EMAIL`, and `FLASK_SECRET`.
 3. Pick a relay mode if your ISP blocks outbound TCP 25.
-4. Forward inbound TCP 25 from your router/firewall to the Unraid host.
-5. Start the container and wait for first-boot initialization to complete.
-6. Create your first account in the web UI, then disable registration in Advanced View if you want a private instance.
-7. Add the DNS records from [docs/simplelogin-setup.md](docs/simplelogin-setup.md).
+4. Leave dropdown-style advanced enum fields such as `ADMIN_FIDO_REQUIRED` on their documented values only. For most installs that means leaving `ADMIN_FIDO_REQUIRED=none`.
+5. Forward inbound TCP 25 from your router/firewall to the Unraid host.
+6. Start the container and wait for first-boot initialization to complete.
+7. Create your first account in the web UI, then disable registration in Advanced View if you want a private instance.
+8. Add the DNS records from [docs/simplelogin-setup.md](docs/simplelogin-setup.md).
 
 For most users, that is enough to get a working instance online.
 
@@ -64,6 +65,7 @@ In other words, the template is responsible for exposing deployment-time and int
 
 - Upstream SimpleLogin container support is currently `linux/amd64` only, so this wrapper publishes amd64-only images.
 - First boot initializes PostgreSQL when `DB_URI` is unset, starts Redis when `REDIS_URL` is unset, writes the runtime `.env`, applies `alembic upgrade head`, then runs `init_app.py`.
+- Before any long-running services start, the wrapper now validates the rendered SimpleLogin config and exits once with a fatal error if enum-style values are invalid.
 - `/appdata` is the main persistent volume. It stores PostgreSQL, Redis, uploads, DKIM keys, generated OpenID keys, and other runtime state.
 - `/pgp` is the optional persistent GnuPG home.
 - `/custom-assets` is an optional advanced mount for file-based upstream settings.
@@ -87,7 +89,17 @@ Local validation is built around:
 - XML validation for the audited template surface
 - shell and Python syntax checks
 - local Docker build on `linux/amd64`
-- end-to-end smoke test coverage for first boot, health, SMTP readiness, restart, and persistence
+- pytest coverage for first boot, health, SMTP readiness, restart, persistence, relay modes, fatal preflight paths, and external service overrides
+
+Run it locally with:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install pytest
+pytest tests/unit tests/template
+pytest tests/integration -m integration
+```
 
 ## Support
 

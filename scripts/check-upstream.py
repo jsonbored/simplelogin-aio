@@ -10,7 +10,6 @@ import sys
 import urllib.error
 import urllib.request
 
-
 ROOT = pathlib.Path(".")
 UPSTREAM_FILE = ROOT / "upstream.toml"
 DOCKERFILE = ROOT / "Dockerfile"
@@ -70,7 +69,9 @@ def github_headers() -> dict[str, str]:
 
 
 def latest_github_release(repo: str, stable_only: bool) -> str:
-    data = http_json(f"https://api.github.com/repos/{repo}/releases?per_page=100", github_headers())
+    data = http_json(
+        f"https://api.github.com/repos/{repo}/releases?per_page=100", github_headers()
+    )
     if not isinstance(data, list):
         fail(f"Unexpected GitHub releases response for {repo}")
     releases: list[str] = []
@@ -125,7 +126,9 @@ def dockerhub_digest_for_tag(image: str, tag: str) -> str:
             f"{exc.code} {exc.reason}"
         )
     except urllib.error.URLError as exc:
-        fail(f"Network error while requesting Docker Hub manifest for {image}:{tag}: {exc.reason}")
+        fail(
+            f"Network error while requesting Docker Hub manifest for {image}:{tag}: {exc.reason}"
+        )
 
     fail(f"Could not determine digest for Docker Hub image {image}:{tag}")
 
@@ -246,7 +249,9 @@ def main() -> None:
     current_digest = read_local_digest(upstream)
 
     if upstream_type == "github-release":
-        latest_version = latest_github_release(str(upstream.get("repo", "")).strip(), stable_only)
+        latest_version = latest_github_release(
+            str(upstream.get("repo", "")).strip(), stable_only
+        )
     else:
         fail(f"Unsupported upstream type: {upstream_type}")
 
@@ -254,7 +259,9 @@ def main() -> None:
     if not image:
         fail("Invalid upstream.toml: missing [upstream].image")
     latest_digest = dockerhub_digest_for_tag(image, latest_version)
-    updates_available = latest_version != current_version or latest_digest != current_digest
+    updates_available = (
+        latest_version != current_version or latest_digest != current_digest
+    )
 
     if os.environ.get("WRITE_UPSTREAM_VERSION") == "true" and updates_available:
         write_local_version(upstream, latest_version)

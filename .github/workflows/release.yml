@@ -194,7 +194,7 @@ jobs:
           aio_track="aio-v${release_revision}"
           gh workflow run "CI / SimpleLogin-AIO" \
             --ref main \
-            -f run_smoke_test=false \
+            -f run_integration_tests=false \
             -f publish_images=true \
             -f aio_track_override="${aio_track}"
           echo "Triggered CI / SimpleLogin-AIO workflow_dispatch on main with aio_track_override=${aio_track}."
@@ -417,7 +417,7 @@ jobs:
           aio_track="aio-v${release_revision}"
           gh workflow run "CI / SimpleLogin-AIO" \
             --ref main \
-            -f run_smoke_test=false \
+            -f run_integration_tests=false \
             -f publish_images=true \
             -f aio_track_override="${aio_track}"
           echo "Triggered CI / SimpleLogin-AIO workflow_dispatch on main with aio_track_override=${aio_track}."

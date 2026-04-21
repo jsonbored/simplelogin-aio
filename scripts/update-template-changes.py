@@ -11,6 +11,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 DEFAULT_CHANGELOG = ROOT / "CHANGELOG.md"
 DEFAULT_TEMPLATE = ROOT / "simplelogin-aio.xml"
 RELEASES_URL = "https://github.com/JSONbored/simplelogin-aio/releases"
+GENERATED_NOTE = (
+    "- Generated from CHANGELOG.md during release preparation. Do not edit manually."
+)
 
 
 def extract_release_notes(version: str, changelog: pathlib.Path) -> str:
@@ -52,21 +55,24 @@ def release_heading(version: str, changelog: pathlib.Path) -> str:
 
 
 def build_changes_body(version: str, notes: str, changelog: pathlib.Path) -> str:
-    lines: list[str] = [release_heading(version, changelog), f"- Release {version}."]
+    lines: list[str] = [release_heading(version, changelog), GENERATED_NOTE]
     for line in notes.splitlines():
-        stripped = line.strip()
+        stripped = line.rstrip()
         if not stripped:
+            lines.append("")
             continue
         if stripped.startswith("<!--") and stripped.endswith("-->"):
             continue
+        if re.match(r"^\[[^\]]+\]:\s+https?://", stripped):
+            continue
+        if stripped.startswith("## "):
+            continue
         if stripped.startswith("### "):
+            lines.append(stripped)
             continue
         if stripped.startswith("Full Changelog:"):
             continue
-        if stripped.startswith("- "):
-            lines.append(stripped)
-            continue
-        lines.append(f"- {stripped}")
+        lines.append(stripped)
 
     lines.append("")
     lines.append(

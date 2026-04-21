@@ -123,6 +123,9 @@ REQUIRED_TARGETS = {
 }
 
 REQUIRED_CHANGELOG_LINK = "https://github.com/JSONbored/simplelogin-aio/releases"
+GENERATED_CHANGELOG_NOTE = (
+    "Generated from CHANGELOG.md during release preparation. Do not edit manually."
+)
 
 
 def load_enum_contracts() -> dict[str, dict[str, object]]:
@@ -165,6 +168,12 @@ def main() -> int:
     if REQUIRED_CHANGELOG_LINK not in changes:
         print(
             "simplelogin-aio.xml <Changes> does not include the canonical GitHub releases URL",
+            file=sys.stderr,
+        )
+        return 1
+    if GENERATED_CHANGELOG_NOTE not in changes:
+        print(
+            "simplelogin-aio.xml <Changes> is missing the generated-from-CHANGELOG note",
             file=sys.stderr,
         )
         return 1

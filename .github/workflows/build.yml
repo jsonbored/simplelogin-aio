@@ -52,6 +52,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   REGISTRY: ghcr.io
   IMAGE_NAME: jsonbored/simplelogin-aio
+  TRUNK_ORG_URL_SLUG: aethereal
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -278,19 +279,22 @@ jobs:
           .venv-ci/bin/pytest \
             tests/unit \
             tests/template \
-            --junit-xml=reports/pytest-unit.xml
+            --junit-xml=reports/pytest-unit.xml \
+            -o junit_family=xunit1
           status=$?
           echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
           exit 0
 
       - name: Upload unit test results to Trunk
-        if: ${{ always() && secrets.TRUNK_TOKEN != '' && secrets.TRUNK_ORG_URL_SLUG != '' }}
+        if: ${{ always() && secrets.TRUNK_API_TOKEN != '' }}
         continue-on-error: true
         uses: trunk-io/analytics-uploader@0e6c416c9d47c105654657984e5e4f0506dd84aa # v1
+        env:
+          TRUNK_API_TOKEN: ${{ secrets.TRUNK_API_TOKEN }}
         with:
           junit-paths: reports/pytest-unit.xml
-          org-slug: ${{ secrets.TRUNK_ORG_URL_SLUG }}
-          token: ${{ secrets.TRUNK_TOKEN }}
+          org-slug: ${{ env.TRUNK_ORG_URL_SLUG }}
+          token: ${{ env.TRUNK_API_TOKEN }}
 
       - name: Fail if unit tests failed
         if: ${{ steps.unit_pytest.outputs.exit_code != '0' }}
@@ -323,19 +327,22 @@ jobs:
           .venv-ci/bin/pytest \
             tests/integration \
             -m integration \
-            --junit-xml=reports/pytest-integration.xml
+            --junit-xml=reports/pytest-integration.xml \
+            -o junit_family=xunit1
           status=$?
           echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
           exit 0
 
       - name: Upload integration test results to Trunk
-        if: ${{ always() && secrets.TRUNK_TOKEN != '' && secrets.TRUNK_ORG_URL_SLUG != '' }}
+        if: ${{ always() && secrets.TRUNK_API_TOKEN != '' }}
         continue-on-error: true
         uses: trunk-io/analytics-uploader@0e6c416c9d47c105654657984e5e4f0506dd84aa # v1
+        env:
+          TRUNK_API_TOKEN: ${{ secrets.TRUNK_API_TOKEN }}
         with:
           junit-paths: reports/pytest-integration.xml
-          org-slug: ${{ secrets.TRUNK_ORG_URL_SLUG }}
-          token: ${{ secrets.TRUNK_TOKEN }}
+          org-slug: ${{ env.TRUNK_ORG_URL_SLUG }}
+          token: ${{ env.TRUNK_API_TOKEN }}
 
       - name: Dump Docker diagnostics
         if: failure()

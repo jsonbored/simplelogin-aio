@@ -1,10 +1,6 @@
-<div align="center">
+# SimpleLogin AIO
 
-<img src="https://socialify.git.ci/JSONbored/simplelogin-aio/image?custom_description=SimpleLogin+All-in-One+Docker+image+for+Unraid+%E2%80%94+self-host+your+own+email+alias+service+easily.+Highly+configurable+for+power+users.&custom_language=Dockerfile&description=1&font=Raleway&forks=1&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F51910064%3Fs%3D200%26v%3D4&name=1&owner=1&pattern=Brick+Wall&stargazers=1&theme=Dark" alt="simplelogin-aio" width="640" height="320" />
-
-</div>
-
----
+![simplelogin-aio](https://socialify.git.ci/JSONbored/simplelogin-aio/image?custom_description=SimpleLogin+All-in-One+Docker+image+for+Unraid+self-host+your+own+email+alias+service+easily.+Highly+configurable+for+power+users.&custom_language=Dockerfile&description=1&font=Raleway&forks=1&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F51910064%3Fs%3D200%26v%3D4&name=1&owner=1&pattern=Brick+Wall&stargazers=1&theme=Dark)
 
 An Unraid-first, single-container deployment of [SimpleLogin](https://github.com/simple-login/app) for people who want the self-hosted alias stack without manually wiring separate Postgres, Redis, and Postfix containers.
 

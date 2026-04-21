@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 import socket
-import subprocess
+import subprocess  # nosec B404 - test helpers shell out only to trusted local tooling
 import time
 import uuid
 from collections.abc import Iterator
@@ -22,7 +22,7 @@ def run_command(
     check: bool = True,
     capture_output: bool = True,
 ) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
+    return subprocess.run(  # nosec B603 - tests execute trusted local commands only
         command,
         cwd=cwd or REPO_ROOT,
         env=env,

@@ -3,19 +3,65 @@ version = 1
 name = "simplelogin-aio"
 
 [setup]
-script = ""
+script = '''
+set -euo pipefail
+
+WORKTREE_PATH="${CODEX_WORKTREE_PATH:-$PWD}"
+cd "$WORKTREE_PATH"
+
+python3 -m venv .venv-local
+.venv-local/bin/pip install --upgrade pip
+.venv-local/bin/pip install pytest
+'''
+
+[cleanup]
+script = '''
+set -euo pipefail
+
+WORKTREE_PATH="${CODEX_WORKTREE_PATH:-$PWD}"
+cd "$WORKTREE_PATH"
+
+rm -rf reports
+docker rm -f $(docker ps -aq --filter "name=simplelogin-aio-pytest-") 2>/dev/null || true
+docker network rm $(docker network ls -q --filter "name=simplelogin-aio-pytest-net-") 2>/dev/null || true
+'''
 
 [[actions]]
 name = "Trunk Tests"
 icon = "test"
 command = '''
+set -euo pipefail
+
+WORKTREE_PATH="${CODEX_WORKTREE_PATH:-$PWD}"
+cd "$WORKTREE_PATH"
+
 mkdir -p reports
-pytest tests/unit tests/template --junit-xml=reports/pytest-unit.xml -o junit_family=xunit1
-pytest tests/integration -m integration --junit-xml=reports/pytest-integration.xml -o junit_family=xunit1
+.venv-local/bin/python -m pytest tests/unit tests/template --junit-xml=reports/pytest-unit.xml -o junit_family=xunit1
+.venv-local/bin/python -m pytest tests/integration -m integration --junit-xml=reports/pytest-integration.xml -o junit_family=xunit1
 trunk-analytics-cli validate --junit-paths "reports/*.xml"
 '''
 
 [[actions]]
 name = "Trunk Check"
 icon = "tool"
-command = "trunk check --show-existing --fix --all"
+command = '''
+set -euo pipefail
+
+WORKTREE_PATH="${CODEX_WORKTREE_PATH:-$PWD}"
+cd "$WORKTREE_PATH"
+
+trunk check --show-existing --fix --all
+'''
+
+[[actions]]
+name = "Trunk Fast Tests"
+icon = "test"
+command = '''
+set -euo pipefail
+
+WORKTREE_PATH="${CODEX_WORKTREE_PATH:-$PWD}"
+cd "$WORKTREE_PATH"
+
+.venv-local/bin/python -m pytest tests/unit tests/template
+python3 scripts/validate-template.py
+'''

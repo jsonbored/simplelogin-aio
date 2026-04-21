@@ -19,8 +19,9 @@ Every `main` build publishes:
 
 ## Release flow
 
-1. Trigger **Release / SimpleLogin-AIO** from `main` with `action=prepare`.
+1. Trigger **Prepare Release / SimpleLogin-AIO** from `main`.
 2. The workflow computes the next `upstream-aio.N` version and opens a release PR.
 3. Review and merge that PR into `main`.
-4. Trigger **Release / SimpleLogin-AIO** from `main` again with `action=publish`.
-5. The workflow reads the merged `CHANGELOG.md` entry, creates the Git tag, and publishes the GitHub Release.
+4. Let the normal `main` CI publish the image tags after the merge passes pytest and integration.
+5. Trigger **Publish Release / SimpleLogin-AIO** from `main`.
+6. The workflow reads the merged `CHANGELOG.md` entry, creates the Git tag, and publishes the GitHub Release.

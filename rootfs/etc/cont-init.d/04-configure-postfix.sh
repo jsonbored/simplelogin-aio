@@ -43,7 +43,8 @@ if [[ -f /appdata/postgres/.sl_internal_pass ]]; then
 	PG_HOST="127.0.0.1"
 	PG_DB="simplelogin"
 elif [[ -n ${DB_URI_VALUE} ]]; then
-	mapfile -t parsed_db_uri < <(parse_postgres_uri "${DB_URI_VALUE}")
+	parsed_db_uri_output="$(parse_postgres_uri "${DB_URI_VALUE}")"
+	mapfile -t parsed_db_uri <<<"${parsed_db_uri_output}"
 	PG_USER="${parsed_db_uri[0]}"
 	PG_PASS="${parsed_db_uri[1]}"
 	PG_HOST="${parsed_db_uri[2]}"
@@ -128,6 +129,10 @@ mailgun)
 custom)
 	postconf -e "relayhost = ${CUSTOM_RELAYHOST}"
 	echo "${CUSTOM_RELAYHOST} ${CUSTOM_USERNAME}:${CUSTOM_PASSWORD}" >/etc/postfix/sasl_passwd
+	;;
+*)
+	echo "Unsupported RELAY_MODE: ${RELAY_MODE}"
+	exit 1
 	;;
 esac
 

@@ -3,10 +3,7 @@ from __future__ import annotations
 
 import json
 import sys
-
-# trunk-ignore(bandit/B405)
-# nosec B405 - this validator reads a trusted local repository XML file only
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # nosec B405 - trusted local XML only
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -133,7 +130,6 @@ def load_enum_contracts() -> dict[str, dict[str, object]]:
 
 
 def main() -> int:
-    # trunk-ignore(bandit/B314)
     tree = ET.parse(TEMPLATE_PATH)  # nosec B314 - trusted local template file only
     root = tree.getroot()
 

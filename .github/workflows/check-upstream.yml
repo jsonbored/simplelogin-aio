@@ -2,7 +2,9 @@ name: Check SimpleLogin Upstream
 
 on:
   schedule:
+    # yamllint disable rule:quoted-strings
     - cron: "23 7 * * 1"
+    # yamllint enable rule:quoted-strings
   workflow_dispatch:
 
 env:

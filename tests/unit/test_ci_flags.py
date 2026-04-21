@@ -7,13 +7,13 @@ def test_ci_flag_resolution_matrix() -> None:
     cases = [
         ("push", "refs/heads/main", "", "", True, True),
         ("push", "refs/heads/feature", "", "", False, False),
+        ("pull_request", "refs/pull/1/merge", "", "", True, False),
         ("workflow_dispatch", "refs/heads/main", "true", "true", True, True),
         ("workflow_dispatch", "refs/heads/main", "1", "1", True, True),
         ("workflow_dispatch", "refs/heads/main", "false", "true", True, True),
         ("workflow_dispatch", "refs/heads/main", "", "false", False, False),
         ("workflow_dispatch", "refs/heads/main", "true", "", True, False),
         ("workflow_dispatch", "refs/heads/feature", "true", "true", False, False),
-        ("pull_request", "refs/pull/1/merge", "", "", False, False),
     ]
 
     for (

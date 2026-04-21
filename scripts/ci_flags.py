@@ -28,6 +28,9 @@ def resolve_flags(
     if event_name == "push" and ref == "refs/heads/main":
         return CiFlags(run_tests_requested=True, publish_requested=True)
 
+    if event_name == "pull_request":
+        return CiFlags(run_tests_requested=True, publish_requested=False)
+
     if event_name == "workflow_dispatch" and ref == "refs/heads/main":
         run_tests_requested = parse_bool(run_tests_input)
         publish_requested = parse_bool(publish_images_input)

@@ -90,6 +90,7 @@ Local validation is built around:
 - shell and Python syntax checks
 - local Docker build on `linux/amd64`
 - pytest coverage for first boot, health, SMTP readiness, restart, persistence, relay modes, fatal preflight paths, and external service overrides
+- Trunk Flaky Tests JUnit XML output for CI uploads and local report validation
 
 Run it locally with:
 
@@ -100,6 +101,22 @@ pip install pytest
 pytest tests/unit tests/template
 pytest tests/integration -m integration
 ```
+
+To generate the exact JUnit XML files used by CI and validate them locally with Trunk Analytics CLI:
+
+```bash
+mkdir -p reports
+pytest tests/unit tests/template --junit-xml=reports/pytest-unit.xml -o junit_family=xunit1
+pytest tests/integration -m integration --junit-xml=reports/pytest-integration.xml -o junit_family=xunit1
+./trunk-analytics-cli validate --junit-paths "reports/*.xml"
+```
+
+CI cost model:
+
+- pull requests and pushes only run the Docker-backed integration suite when build-relevant files change
+- docs-only or metadata-only changes do not trigger the expensive container matrix
+- image publish remains gated behind the integration suite, so release/publish paths cannot skip it
+- nothing in this repo runs the Docker suite automatically before local commits; keep local integration runs explicit instead of turning every commit into an 8-minute pre-commit hook
 
 ## Support
 

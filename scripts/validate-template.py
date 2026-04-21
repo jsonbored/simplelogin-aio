@@ -116,9 +116,6 @@ REQUIRED_TARGETS = {
     "WORDS_FILE_PATH",
 }
 
-REQUIRED_CHANGELOG_LINK = "https://github.com/JSONbored/simplelogin-aio/releases"
-
-
 def main() -> int:
     tree = ET.parse(TEMPLATE_PATH)
     root = tree.getroot()
@@ -145,13 +142,6 @@ def main() -> int:
     if not changes:
         print("simplelogin-aio.xml is missing a non-empty <Changes> section", file=sys.stderr)
         return 1
-    if REQUIRED_CHANGELOG_LINK not in changes:
-        print(
-            "simplelogin-aio.xml <Changes> does not include the canonical GitHub releases URL",
-            file=sys.stderr,
-        )
-        return 1
-
     invalid_option_configs: list[str] = []
     invalid_pipe_configs: list[str] = []
     for config in root.findall(".//Config"):

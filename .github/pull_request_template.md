@@ -5,7 +5,7 @@
 
 ## Validation
 
-- [ ] local smoke test passed
+- [ ] local pytest suite passed
 - [ ] docs updated if behavior changed
 - [ ] XML updated if config surface changed
 

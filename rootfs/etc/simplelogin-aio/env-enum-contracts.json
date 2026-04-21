@@ -1,0 +1,489 @@
+{
+  "RELAY_MODE": {
+    "template_values": [
+      "direct",
+      "brevo",
+      "protonmail",
+      "gmail",
+      "mailgun",
+      "custom"
+    ],
+    "template_default": "direct",
+    "runtime_values": [
+      "direct",
+      "brevo",
+      "protonmail",
+      "gmail",
+      "mailgun",
+      "custom"
+    ],
+    "write_env": false
+  },
+  "LOCAL_FILE_UPLOAD": {
+    "template_values": ["true", "false"],
+    "template_default": "true",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "DISABLE_REGISTRATION": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "DISABLE_ONBOARDING": {
+    "template_values": ["true", "false"],
+    "template_default": "true",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "DISABLE_ALIAS_SUFFIX": {
+    "template_values": ["true", "false"],
+    "template_default": "true",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "ENFORCE_SPF": {
+    "template_values": ["true", "false"],
+    "template_default": "true",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "NOT_SEND_EMAIL": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "PROTON_VALIDATE_CERTS": {
+    "template_values": ["true", "false"],
+    "template_default": "true",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "ENABLE_OIDC_SERVER": {
+    "template_values": ["0", "1"],
+    "template_default": "0",
+    "runtime_values": ["0", "1"],
+    "write_env": false
+  },
+  "ENABLE_SPAM_ASSASSIN": {
+    "template_values": ["0", "1"],
+    "template_default": "0",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "AUTO_GENERATE_PGP": {
+    "template_values": ["0", "1"],
+    "template_default": "0",
+    "runtime_values": ["0", "1"],
+    "write_env": false
+  },
+  "PROTON_PREVENT_CHANGE_LINKED_ACCOUNT": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "POSTFIX_SUBMISSION_TLS": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "LOAD_PGP_EMAIL_HANDLER": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "APPLE_WEBHOOK_SECRET_CHECK_ENABLED": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "RSPAMD_SIGN_DKIM": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "ZENDESK_ENABLED": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "DMARC_CHECK_ENABLED": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "EVENT_WEBHOOK_SKIP_VERIFY_SSL": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "EVENT_WEBHOOK_DISABLE": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "ENABLE_ALL_REVERSE_ALIAS_REPLACEMENT": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "DISABLE_RATE_LIMIT": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "USE_RUST_PGP": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "ADMIN_FIDO_REQUIRED": {
+    "template_values": ["none", "any", "hardware"],
+    "template_default": "none",
+    "runtime_values": ["none", "any", "hardware"],
+    "write_env": true,
+    "env_helper": "compat",
+    "container_env_values": [
+      "",
+      "none",
+      "any",
+      "hardware",
+      "|none|any|hardware",
+      "none|any|hardware"
+    ]
+  },
+  "DROP_PGP_KEY_ATTACHMENTS_ON_REPLY": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  },
+  "STORE_TRANSACTIONAL_EMAILS": {
+    "template_values": ["false", "true"],
+    "template_default": "false",
+    "runtime_values": ["1"],
+    "write_env": true,
+    "env_helper": "presence",
+    "container_env_values": [
+      "",
+      "0",
+      "1",
+      "false",
+      "true",
+      "no",
+      "yes",
+      "off",
+      "on",
+      "disabled",
+      "enabled"
+    ]
+  }
+}

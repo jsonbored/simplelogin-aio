@@ -24,14 +24,14 @@ def test_happy_path_boot_and_restart(runtime: DockerRuntime) -> None:
     with runtime.container(env_overrides={"DISABLE_REGISTRATION": "1"}) as container:
         container.wait_for_http()
         container.wait_for_smtp()
-        assert (container.appdata_dir / "postgres/PG_VERSION").is_file()  # nosec B101
-        assert (container.appdata_dir / "sl/.initialized").is_file()  # nosec B101
+        assert container.path_exists("/appdata/postgres/PG_VERSION")  # nosec B101
+        assert container.path_exists("/appdata/sl/.initialized")  # nosec B101
 
         container.restart()
         container.wait_for_http()
         container.wait_for_smtp()
-        assert (container.appdata_dir / "postgres/PG_VERSION").is_file()  # nosec B101
-        assert (container.appdata_dir / "sl/.initialized").is_file()  # nosec B101
+        assert container.path_exists("/appdata/postgres/PG_VERSION")  # nosec B101
+        assert container.path_exists("/appdata/sl/.initialized")  # nosec B101
 
 
 @pytest.mark.parametrize(

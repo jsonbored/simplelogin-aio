@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 import shutil
 import socket
 import subprocess  # nosec B404 - test helpers shell out only to local tooling
@@ -9,7 +10,6 @@ import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from tests.conftest import REPO_ROOT
 
@@ -63,6 +63,52 @@ def reserve_host_port() -> int:
         return sock.getsockname()[1]
 
 
+def create_docker_volume(prefix: str) -> str:
+    volume_name = f"{prefix}-{uuid.uuid4().hex[:10]}"
+    run_command(["docker", "volume", "create", volume_name])
+    return volume_name
+
+
+def remove_docker_volume(volume_name: str) -> None:
+    run_command(["docker", "volume", "rm", "-f", volume_name], check=False)
+
+
+@contextmanager
+def docker_volume(prefix: str) -> Iterator[str]:
+    volume_name = create_docker_volume(prefix)
+    try:
+        yield volume_name
+    finally:
+        remove_docker_volume(volume_name)
+
+
+def docker_exec(
+    container_name: str, command: str, *, check: bool = True
+) -> subprocess.CompletedProcess[str]:
+    return run_command(
+        ["docker", "exec", container_name, "sh", "-lc", command], check=check
+    )
+
+
+def container_path_exists(container_name: str, path: str) -> bool:
+    return (
+        docker_exec(
+            container_name, f"test -e {shlex.quote(path)}", check=False
+        ).returncode
+        == 0
+    )
+
+
+def read_container_file(container_name: str, path: str) -> str:
+    return docker_exec(container_name, f"cat {shlex.quote(path)}").stdout
+
+
+def container_file_size(container_name: str, path: str) -> int:
+    return int(
+        docker_exec(container_name, f"wc -c < {shlex.quote(path)}").stdout.strip()
+    )
+
+
 class DockerRuntime:
     def __init__(self, image_tag: str) -> None:
         self.image_tag = image_tag
@@ -95,10 +141,9 @@ class DockerRuntime:
         name = f"simplelogin-aio-pytest-{suffix}"
         http_port = reserve_host_port()
         smtp_port = reserve_host_port()
-
-        with TemporaryDirectory(
-            prefix=f"{name}-appdata-"
-        ) as appdata_dir, TemporaryDirectory(prefix=f"{name}-pgp-") as pgp_dir:
+        appdata_volume = create_docker_volume(f"{name}-appdata")
+        pgp_volume = create_docker_volume(f"{name}-pgp")
+        try:
             command = [
                 "docker",
                 "run",
@@ -131,9 +176,9 @@ class DockerRuntime:
                     "-e",
                     "POSTMASTER=postmaster@example.com",
                     "-v",
-                    f"{appdata_dir}:/appdata",
+                    f"{appdata_volume}:/appdata",
                     "-v",
-                    f"{pgp_dir}:/pgp",
+                    f"{pgp_volume}:/pgp",
                 ]
             )
 
@@ -148,13 +193,16 @@ class DockerRuntime:
                 name=name,
                 http_port=http_port,
                 smtp_port=smtp_port,
-                appdata_dir=Path(appdata_dir),
-                pgp_dir=Path(pgp_dir),
+                appdata_volume=appdata_volume,
+                pgp_volume=pgp_volume,
             )
             try:
                 yield handle
             finally:
                 self.remove(name)
+        finally:
+            remove_docker_volume(appdata_volume)
+            remove_docker_volume(pgp_volume)
 
 
 class ContainerHandle:
@@ -165,27 +213,38 @@ class ContainerHandle:
         name: str,
         http_port: int,
         smtp_port: int,
-        appdata_dir: Path,
-        pgp_dir: Path,
+        appdata_volume: str,
+        pgp_volume: str,
     ) -> None:
         self.runtime = runtime
         self.name = name
         self.http_port = http_port
         self.smtp_port = smtp_port
-        self.appdata_dir = appdata_dir
-        self.pgp_dir = pgp_dir
+        self.appdata_volume = appdata_volume
+        self.pgp_volume = pgp_volume
 
     def logs(self) -> str:
         return self.runtime.logs(self.name)
 
-    def exec(self, command: str) -> subprocess.CompletedProcess[str]:
-        return run_command(["docker", "exec", self.name, "sh", "-lc", command])
+    def exec(
+        self, command: str, *, check: bool = True
+    ) -> subprocess.CompletedProcess[str]:
+        return docker_exec(self.name, command, check=check)
 
     def restart(self) -> None:
         run_command(["docker", "restart", self.name])
 
     def is_running(self) -> bool:
         return self.runtime.inspect_state(self.name, "State.Status") == "running"
+
+    def path_exists(self, path: str) -> bool:
+        return container_path_exists(self.name, path)
+
+    def read_text(self, path: str) -> str:
+        return read_container_file(self.name, path)
+
+    def file_size(self, path: str) -> int:
+        return container_file_size(self.name, path)
 
     def wait_for_http(self, *, timeout: int = 420) -> None:
         deadline = time.time() + timeout

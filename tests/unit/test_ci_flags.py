@@ -30,5 +30,5 @@ def test_ci_flag_resolution_matrix() -> None:
             run_tests_input=test_input,
             publish_images_input=publish_input,
         )
-        assert result.run_tests_requested is expected_test
-        assert result.publish_requested is expected_publish
+        assert result.run_tests_requested is expected_test  # nosec B101
+        assert result.publish_requested is expected_publish  # nosec B101

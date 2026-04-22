@@ -23,8 +23,10 @@ def test_validate_config_rejects_invalid_env_file(tmp_path: Path) -> None:
         check=False,
     )
 
-    assert result.returncode == 1
-    assert "ADMIN_FIDO_REQUIRED='definitely-not-valid' is invalid" in result.stderr
+    assert result.returncode == 1  # nosec B101
+    assert (
+        "ADMIN_FIDO_REQUIRED='definitely-not-valid' is invalid" in result.stderr
+    )  # nosec B101
 
 
 def test_validate_config_rejects_invalid_process_env() -> None:
@@ -38,8 +40,8 @@ def test_validate_config_rejects_invalid_process_env() -> None:
         check=False,
     )
 
-    assert result.returncode == 1
-    assert "ENABLE_OIDC_SERVER='maybe' is invalid" in result.stderr
+    assert result.returncode == 1  # nosec B101
+    assert "ENABLE_OIDC_SERVER='maybe' is invalid" in result.stderr  # nosec B101
 
 
 def test_validate_config_rejects_invalid_presence_process_env() -> None:
@@ -53,5 +55,5 @@ def test_validate_config_rejects_invalid_presence_process_env() -> None:
         check=False,
     )
 
-    assert result.returncode == 1
-    assert "DISABLE_REGISTRATION='maybe' is invalid" in result.stderr
+    assert result.returncode == 1  # nosec B101
+    assert "DISABLE_REGISTRATION='maybe' is invalid" in result.stderr  # nosec B101

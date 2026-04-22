@@ -1,8 +1,12 @@
+# SimpleLogin-AIO
+
+<!-- markdownlint-disable MD033 -->
 <div align="center">
 
 <img src="https://socialify.git.ci/JSONbored/simplelogin-aio/image?custom_description=SimpleLogin+All-in-One+Docker+image+for+Unraid+%E2%80%94+self-host+your+own+email+alias+service+easily.+Highly+configurable+for+power+users.&custom_language=Dockerfile&description=1&font=Raleway&forks=1&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F51910064%3Fs%3D200%26v%3D4&name=1&owner=1&pattern=Brick+Wall&stargazers=1&theme=Dark" alt="simplelogin-aio" width="640" height="320" />
 
 </div>
+<!-- markdownlint-enable MD033 -->
 
 ---
 
@@ -108,7 +112,7 @@ To generate the exact JUnit XML files used by CI and validate them locally with 
 mkdir -p reports
 pytest tests/unit tests/template --junit-xml=reports/pytest-unit.xml -o junit_family=xunit1
 pytest tests/integration -m integration --junit-xml=reports/pytest-integration.xml -o junit_family=xunit1
-./trunk-analytics-cli validate --junit-paths "reports/*.xml"
+./trunk-analytics-cli validate --junit-paths "reports/pytest-unit.xml,reports/pytest-integration.xml"
 ```
 
 CI cost model:

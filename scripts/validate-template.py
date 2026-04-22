@@ -4,11 +4,9 @@ from __future__ import annotations
 import json
 import re
 import sys
-
-# trunk-ignore(bandit/B405)
-# nosec B405 - this validator reads a trusted local repository XML file only
-import xml.etree.ElementTree as ET
 from pathlib import Path
+
+from defusedxml import ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE_PATH = ROOT / "simplelogin-aio.xml"
@@ -170,8 +168,7 @@ def validate_changes(changes: str) -> str | None:
 
 
 def main() -> int:
-    # trunk-ignore(bandit/B314)
-    tree = ET.parse(TEMPLATE_PATH)  # nosec B314 - trusted local template file only
+    tree = ET.parse(TEMPLATE_PATH)
     root = tree.getroot()
 
     targets = {

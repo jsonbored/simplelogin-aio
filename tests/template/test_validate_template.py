@@ -10,4 +10,4 @@ def test_validate_template_script_passes() -> None:
     result = run_command(
         [sys.executable, "scripts/validate-template.py"], cwd=REPO_ROOT
     )
-    assert "simplelogin-aio.xml parsed successfully" in result.stdout
+    assert "simplelogin-aio.xml parsed successfully" in result.stdout  # nosec B101

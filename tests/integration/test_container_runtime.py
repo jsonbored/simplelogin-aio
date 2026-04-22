@@ -24,14 +24,14 @@ def test_happy_path_boot_and_restart(runtime: DockerRuntime) -> None:
     with runtime.container(env_overrides={"DISABLE_REGISTRATION": "1"}) as container:
         container.wait_for_http()
         container.wait_for_smtp()
-        assert (container.appdata_dir / "postgres/PG_VERSION").is_file()
-        assert (container.appdata_dir / "sl/.initialized").is_file()
+        assert (container.appdata_dir / "postgres/PG_VERSION").is_file()  # nosec B101
+        assert (container.appdata_dir / "sl/.initialized").is_file()  # nosec B101
 
         container.restart()
         container.wait_for_http()
         container.wait_for_smtp()
-        assert (container.appdata_dir / "postgres/PG_VERSION").is_file()
-        assert (container.appdata_dir / "sl/.initialized").is_file()
+        assert (container.appdata_dir / "postgres/PG_VERSION").is_file()  # nosec B101
+        assert (container.appdata_dir / "sl/.initialized").is_file()  # nosec B101
 
 
 @pytest.mark.parametrize(
@@ -89,32 +89,35 @@ def test_pgp_key_generation(runtime: DockerRuntime) -> None:
             {
                 "RELAY_MODE": "brevo",
                 "BREVO_USERNAME": "brevo-user",
-                "BREVO_PASSWORD": "brevo-pass",
+                "BREVO_PASSWORD": "brevo-pass",  # nosec B105
             },
-            "[smtp-relay.brevo.com]:587 brevo-user:brevo-pass",
+            "[smtp-relay.brevo.com]:587 brevo-user:brevo-pass",  # nosec B105
         ),
         (
             "relay-protonmail",
-            {"RELAY_MODE": "protonmail", "PROTONMAIL_TOKEN": "proton-token"},
-            "[smtp.protonmail.ch]:587 support@example.com:proton-token",
+            {
+                "RELAY_MODE": "protonmail",
+                "PROTONMAIL_TOKEN": "proton-token",
+            },  # nosec B105
+            "[smtp.protonmail.ch]:587 support@example.com:proton-token",  # nosec B105
         ),
         (
             "relay-gmail",
             {
                 "RELAY_MODE": "gmail",
                 "GMAIL_USERNAME": "user@gmail.com",
-                "GMAIL_APP_PASSWORD": "abcdefghijklmnop",
+                "GMAIL_APP_PASSWORD": "abcdefghijklmnop",  # nosec B105
             },
-            "[smtp.gmail.com]:587 user@gmail.com:abcdefghijklmnop",
+            "[smtp.gmail.com]:587 user@gmail.com:abcdefghijklmnop",  # nosec B105
         ),
         (
             "relay-mailgun",
             {
                 "RELAY_MODE": "mailgun",
                 "MAILGUN_USERNAME": "postmaster@example.com",
-                "MAILGUN_PASSWORD": "mailgun-pass",
+                "MAILGUN_PASSWORD": "mailgun-pass",  # nosec B105
             },
-            "[smtp.mailgun.org]:587 postmaster@example.com:mailgun-pass",
+            "[smtp.mailgun.org]:587 postmaster@example.com:mailgun-pass",  # nosec B105
         ),
         (
             "relay-custom",
@@ -122,9 +125,9 @@ def test_pgp_key_generation(runtime: DockerRuntime) -> None:
                 "RELAY_MODE": "custom",
                 "CUSTOM_RELAYHOST": "[smtp.example.net]:587",
                 "CUSTOM_USERNAME": "smtp-user",
-                "CUSTOM_PASSWORD": "smtp-pass",
+                "CUSTOM_PASSWORD": "smtp-pass",  # nosec B105
             },
-            "[smtp.example.net]:587 smtp-user:smtp-pass",
+            "[smtp.example.net]:587 smtp-user:smtp-pass",  # nosec B105
         ),
     ],
 )
@@ -138,7 +141,7 @@ def test_relay_modes(
         container.wait_for_http()
         container.wait_for_smtp()
         result = container.exec("cat /etc/postfix/sasl_passwd")
-        assert expected_line in result.stdout
+        assert expected_line in result.stdout  # nosec B101
 
 
 @pytest.mark.parametrize(
@@ -194,8 +197,8 @@ def test_fatal_preflight_cases(
         container.wait_for_log(expected_fatal_log)
         container.wait_for_exit()
         logs = container.logs()
-        assert "Starting gunicorn" not in logs
-        assert "Running SimpleLogin database migrations..." not in logs
+        assert "Starting gunicorn" not in logs  # nosec B101
+        assert "Running SimpleLogin database migrations..." not in logs  # nosec B101
 
 
 def test_external_db_and_redis(runtime: DockerRuntime) -> None:
@@ -221,7 +224,7 @@ def test_external_db_and_redis(runtime: DockerRuntime) -> None:
                 "-e",
                 "POSTGRES_USER=simplelogin",
                 "-e",
-                "POSTGRES_PASSWORD=simpleloginpass",
+                "POSTGRES_PASSWORD=simpleloginpass",  # nosec B105
                 "postgres:14",
             ]
         )
@@ -275,7 +278,7 @@ def test_external_db_and_redis(runtime: DockerRuntime) -> None:
 
         with runtime.container(
             env_overrides={
-                "DB_URI": f"postgresql://simplelogin:simpleloginpass@{postgres_name}:5432/simplelogin",
+                "DB_URI": f"postgresql://simplelogin:simpleloginpass@{postgres_name}:5432/simplelogin",  # nosec B105
                 "REDIS_URL": f"redis://{redis_name}:6379/0",
             },
             network=network_name,
@@ -286,8 +289,8 @@ def test_external_db_and_redis(runtime: DockerRuntime) -> None:
                 "! ps -eo args | grep -E '(^| )/usr/lib/postgresql/.*/bin/postgres -D /appdata/postgres' >/dev/null"
             )
             redis_result = container.exec("! pgrep -x redis-server >/dev/null")
-            assert postgres_result.returncode == 0
-            assert redis_result.returncode == 0
+            assert postgres_result.returncode == 0  # nosec B101
+            assert redis_result.returncode == 0  # nosec B101
     finally:
         run_command(["docker", "rm", "-f", postgres_name, redis_name], check=False)
         run_command(["docker", "network", "rm", network_name], check=False)

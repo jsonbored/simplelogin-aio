@@ -9,6 +9,7 @@ import re
 import sys
 import urllib.error
 import urllib.request
+from typing import NoReturn
 
 ROOT = pathlib.Path(".")
 UPSTREAM_FILE = ROOT / "upstream.toml"
@@ -19,7 +20,7 @@ SEMVER_RE = re.compile(
 )
 
 
-def fail(message: str) -> "NoReturn":
+def fail(message: str) -> NoReturn:
     print(message, file=sys.stderr)
     raise SystemExit(1)
 
@@ -34,7 +35,7 @@ def http_json(url: str, headers: dict[str, str] | None = None) -> object:
         },
     )
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=30) as response:  # nosec B310
             return json.load(response)
     except urllib.error.HTTPError as exc:
         fail(f"HTTP error while requesting {url}: {exc.code} {exc.reason}")
@@ -116,7 +117,7 @@ def dockerhub_digest_for_tag(image: str, tag: str) -> str:
         },
     )
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=30) as response:  # nosec B310
             digest = response.headers.get("docker-content-digest", "").strip()
             if digest:
                 return digest

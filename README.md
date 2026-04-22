@@ -97,7 +97,7 @@ Run it locally with:
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate
-pip install pytest
+pip install -r requirements-dev.txt
 pytest tests/unit tests/template
 pytest tests/integration -m integration
 ```

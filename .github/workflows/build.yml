@@ -4,55 +4,43 @@ on:
   push:
     branches: [main]
     paths:
-      - "Dockerfile"
-      - "pyproject.toml"
-      - "rootfs/**"
-      - "scripts/**"
-      - "tests/**"
-      - "upstream.toml"
-      - "simplelogin-aio.xml"
-      - "renovate.json"
-      - ".github/workflows/**"
+      - CHANGELOG.md
+      - Dockerfile
+      - cliff.toml
+      - pyproject.toml
+      - requirements-dev.txt
+      - rootfs/**
+      - scripts/**
+      - tests/**
+      - upstream.toml
+      - simplelogin-aio.xml
+      - renovate.json
+      - .github/workflows/**
   pull_request:
     branches: [main]
     paths:
-      - "Dockerfile"
-      - "pyproject.toml"
-      - "rootfs/**"
-      - "scripts/**"
-      - "tests/**"
-      - "upstream.toml"
-      - "simplelogin-aio.xml"
-      - "renovate.json"
-      - ".github/workflows/**"
+      - CHANGELOG.md
+      - Dockerfile
+      - cliff.toml
+      - pyproject.toml
+      - requirements-dev.txt
+      - rootfs/**
+      - scripts/**
+      - tests/**
+      - upstream.toml
+      - simplelogin-aio.xml
+      - renovate.json
+      - .github/workflows/**
   workflow_dispatch:
-    inputs:
-      run_integration_tests:
-        description: "Run the Docker-backed integration test job"
-        required: false
-        default: false
-        type: boolean
-      publish_images:
-        description: "Publish images to GHCR/Docker Hub"
-        required: false
-        default: false
-        type: boolean
-      sync_awesome_unraid:
-        description: "Open or refresh the awesome-unraid sync pull request"
-        required: false
-        default: false
-        type: boolean
-      aio_track_override:
-        description: "Optional package line override (example: aio-v3)"
-        required: false
-        default: ""
-        type: string
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   REGISTRY: ghcr.io
   IMAGE_NAME: jsonbored/simplelogin-aio
   TRUNK_ORG_URL_SLUG: aethereal
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -85,14 +73,10 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_SHA_VALUE: ${{ github.sha }}
           GITHUB_REF_VALUE: ${{ github.ref }}
-          RUN_TESTS_INPUT: ${{ github.event.inputs.run_integration_tests || '' }}
-          PUBLISH_IMAGES_INPUT: ${{ github.event.inputs.publish_images || '' }}
         run: |
           python3 scripts/ci_flags.py \
             --event-name "${EVENT_NAME}" \
-            --ref "${GITHUB_REF_VALUE}" \
-            --run-tests-input "${RUN_TESTS_INPUT}" \
-            --publish-images-input "${PUBLISH_IMAGES_INPUT}" >> "${GITHUB_OUTPUT}"
+            --ref "${GITHUB_REF_VALUE}" >> "${GITHUB_OUTPUT}"
 
           if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
             echo "build_related=true" >> "${GITHUB_OUTPUT}"
@@ -149,13 +133,13 @@ jobs:
           while IFS= read -r path; do
             [[ -z "${path}" ]] && continue
             case "${path}" in
-              Dockerfile|pyproject.toml|upstream.toml|rootfs/*|tests/*)
+              Dockerfile|pyproject.toml|requirements-dev.txt|upstream.toml|rootfs/*|tests/*)
                 build_related=true
                 ;;
               simplelogin-aio.xml)
                 xml_related=true
                 ;;
-              scripts/*|.github/workflows/*)
+              CHANGELOG.md|cliff.toml|scripts/*|.github/workflows/*)
                 tooling_related=true
                 ;;
               renovate.json)
@@ -190,18 +174,6 @@ jobs:
           PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile rootfs/etc/simplelogin-aio/validate-config.py
           find rootfs -type f -name '*.sh' -print0 | xargs -0 -n1 bash -n
           find rootfs -type f -path '*/run' -print0 | xargs -0 -n1 bash -n
-
-      - name: Validate CI flag resolver behavior
-        if: ${{ needs.detect-changes.outputs.build_related == 'true' || needs.detect-changes.outputs.tooling_related == 'true' }}
-        run: |
-          python3 -m venv .venv-ci
-          .venv-ci/bin/pip install pytest
-          .venv-ci/bin/pytest tests/unit/test_ci_flags.py
-
-      - name: Validate XML
-        if: ${{ needs.detect-changes.outputs.build_related == 'true' || needs.detect-changes.outputs.xml_related == 'true' }}
-        run: |
-          python3 scripts/validate-template.py
 
       - name: Validate Renovate config
         if: ${{ needs.detect-changes.outputs.renovate_related == 'true' }}
@@ -263,12 +235,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      TRUNK_API_TOKEN: ${{ secrets.TRUNK_API_TOKEN }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install pytest
         run: |
           python3 -m venv .venv-ci
-          .venv-ci/bin/pip install pytest
+          .venv-ci/bin/pip install -r requirements-dev.txt
 
       - name: Run pytest unit tests
         id: unit_pytest
@@ -286,7 +260,7 @@ jobs:
           exit 0
 
       - name: Upload unit test results to Trunk
-        if: ${{ always() && secrets.TRUNK_API_TOKEN != '' }}
+        if: ${{ always() && env.TRUNK_API_TOKEN != '' }}
         continue-on-error: true
         uses: trunk-io/analytics-uploader@0e6c416c9d47c105654657984e5e4f0506dd84aa # v1
         env:
@@ -301,7 +275,7 @@ jobs:
         run: exit 1
 
   integration-tests:
-    if: ${{ needs.detect-changes.outputs.build_related == 'true' && needs.detect-changes.outputs.run_tests_requested == 'true' }}
+    if: ${{ needs.detect-changes.outputs.run_tests_requested == 'true' && (needs.detect-changes.outputs.build_related == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.publish_requested == 'true')) }}
     needs:
       - detect-changes
       - validate-template
@@ -310,13 +284,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      TRUNK_API_TOKEN: ${{ secrets.TRUNK_API_TOKEN }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install pytest
         run: |
           python3 -m venv .venv-ci
-          .venv-ci/bin/pip install pytest
+          .venv-ci/bin/pip install -r requirements-dev.txt
 
       - name: Run pytest integration tests
         id: integration_pytest
@@ -334,7 +310,7 @@ jobs:
           exit 0
 
       - name: Upload integration test results to Trunk
-        if: ${{ always() && secrets.TRUNK_API_TOKEN != '' }}
+        if: ${{ always() && env.TRUNK_API_TOKEN != '' }}
         continue-on-error: true
         uses: trunk-io/analytics-uploader@0e6c416c9d47c105654657984e5e4f0506dd84aa # v1
         env:
@@ -356,7 +332,7 @@ jobs:
         run: exit 1
 
   publish:
-    if: ${{ needs.detect-changes.outputs.build_related == 'true' && github.event_name != 'pull_request' && needs.detect-changes.outputs.publish_requested == 'true' }}
+    if: ${{ needs.detect-changes.outputs.build_related == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.publish_requested == 'true' }}
     needs:
       - detect-changes
       - validate-template
@@ -410,7 +386,6 @@ jobs:
       - name: Compute image tags
         id: prep
         env:
-          AIO_TRACK_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.aio_track_override || '' }}
           DOCKERHUB_ENABLED: ${{ steps.dockerhub.outputs.enabled }}
           DOCKERHUB_IMAGE_NAME: ${{ steps.dockerhub.outputs.image_name }}
         run: |
@@ -421,24 +396,20 @@ jobs:
           raw_version="$(sed -n 's/^ARG UPSTREAM_VERSION=//p' Dockerfile | head -n1)"
           upstream_version="${raw_version%%@*}"
           upstream_digest="$(sed -n 's/^ARG UPSTREAM_IMAGE_DIGEST=//p' Dockerfile | head -n1)"
-          if [[ -n "${AIO_TRACK_OVERRIDE}" ]]; then
-            aio_track="${AIO_TRACK_OVERRIDE}"
+          changelog_version="$(python3 scripts/release.py latest-changelog-version 2>/dev/null || true)"
+          aio_revision=""
+          case "${changelog_version}" in
+            "${upstream_version}"-aio.*)
+              candidate_revision="${changelog_version##*.}"
+              if [[ "${candidate_revision}" =~ ^[0-9]+$ ]]; then
+                aio_revision="${candidate_revision}"
+              fi
+              ;;
+          esac
+          if [[ -n "${aio_revision}" ]]; then
+            aio_track="aio-v${aio_revision}"
           else
-            changelog_version="$(python3 scripts/release.py latest-changelog-version 2>/dev/null || true)"
-            aio_revision=""
-            case "${changelog_version}" in
-              "${upstream_version}"-aio.*)
-                candidate_revision="${changelog_version##*.}"
-                if [[ "${candidate_revision}" =~ ^[0-9]+$ ]]; then
-                  aio_revision="${candidate_revision}"
-                fi
-                ;;
-            esac
-            if [[ -n "${aio_revision}" ]]; then
-              aio_track="aio-v${aio_revision}"
-            else
-              aio_track="aio-v1"
-            fi
+            aio_track="aio-v1"
           fi
 
           {
@@ -486,7 +457,7 @@ jobs:
             io.jsonbored.wrapper.track=${{ steps.prep.outputs.aio_track }}
 
   sync-awesome-unraid:
-    if: ${{ needs.detect-changes.outputs.xml_related == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.sync_awesome_unraid == 'true')) }}
+    if: ${{ needs.detect-changes.outputs.xml_related == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     needs:
       - detect-changes
       - validate-template
@@ -531,7 +502,7 @@ jobs:
           path: target-repo
           add-paths: simplelogin-aio.xml
           commit-message: "chore: auto-sync simplelogin-aio.xml from upstream"
-          branch: "sync-awesome-unraid/simplelogin-aio"
+          branch: sync-awesome-unraid/simplelogin-aio
           delete-branch: true
           base: main
           title: "chore: sync simplelogin-aio template"

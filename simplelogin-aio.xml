@@ -33,23 +33,13 @@
 - For the simplest operation, keep the internal Postgres/Redis/Postfix defaults and only set the small required config set above.</Overview>
   <Changes>### 2026-04-16&#xD;
 - Generated from CHANGELOG.md during release preparation. Do not edit manually.&#xD;
-&#xD;
-### Dependency Updates&#xD;
 - Bump dockerfile frontend digest&#xD;
-&#xD;
-### Documentation&#xD;
 - Clarify in-app SimpleLogin feature coverage&#xD;
-&#xD;
-### Features&#xD;
 - Align simplelogin-aio with sure-aio parity&#xD;
-&#xD;
-### Fixes&#xD;
 - Skip no-op release drafts&#xD;
 - Make releases manual and gate heavy workflows&#xD;
 - Harden publish and changelog range&#xD;
-- Expose full upstream env surface&#xD;
-&#xD;
-Full changelog and release notes: [url=https://github.com/JSONbored/simplelogin-aio/releases]GitHub Releases[/url]</Changes>
+- Expose full upstream env surface</Changes>
   <Category>Network:Privacy Network:Web</Category>
   <WebUI>http://[IP]:[PORT:7777]</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/JSONbored/awesome-unraid/main/simplelogin-aio.xml</TemplateURL>

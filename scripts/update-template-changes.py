@@ -10,7 +10,6 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DEFAULT_CHANGELOG = ROOT / "CHANGELOG.md"
 DEFAULT_TEMPLATE = ROOT / "simplelogin-aio.xml"
-RELEASES_URL = "https://github.com/JSONbored/simplelogin-aio/releases"
 GENERATED_NOTE = (
     "- Generated from CHANGELOG.md during release preparation. Do not edit manually."
 )
@@ -57,9 +56,8 @@ def release_heading(version: str, changelog: pathlib.Path) -> str:
 def build_changes_body(version: str, notes: str, changelog: pathlib.Path) -> str:
     lines: list[str] = [release_heading(version, changelog), GENERATED_NOTE]
     for line in notes.splitlines():
-        stripped = line.rstrip()
+        stripped = line.strip()
         if not stripped:
-            lines.append("")
             continue
         if stripped.startswith("<!--") and stripped.endswith("-->"):
             continue
@@ -68,16 +66,16 @@ def build_changes_body(version: str, notes: str, changelog: pathlib.Path) -> str
         if stripped.startswith("## "):
             continue
         if stripped.startswith("### "):
-            lines.append(stripped)
             continue
         if stripped.startswith("Full Changelog:"):
             continue
-        lines.append(stripped)
+        if stripped.startswith(("- ", "* ")):
+            lines.append(f"- {stripped[2:].strip()}")
+            continue
+        lines.append(f"- {stripped}")
 
-    lines.append("")
-    lines.append(
-        f"Full changelog and release notes: [url={RELEASES_URL}]GitHub Releases[/url]"
-    )
+    if len(lines) == 2:
+        raise SystemExit("Release notes did not produce any bullet lines for <Changes>")
     return "\n".join(lines).strip()
 
 

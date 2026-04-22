@@ -60,6 +60,8 @@ RUN find /etc/cont-init.d -type f -exec chmod +x {} \; && \
 EXPOSE 7777 25
 VOLUME ["/appdata", "/pgp"]
 
+ENV S6_CMD_WAIT_FOR_SERVICES_MAXTIME=300000
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
   CMD curl -fsS http://127.0.0.1:7777/health >/dev/null || exit 1
 

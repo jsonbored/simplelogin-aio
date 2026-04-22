@@ -11,6 +11,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: write
     steps:
       - name: Checkout main
@@ -32,6 +33,45 @@ jobs:
             echo "CHANGELOG top entry ${changelog_version} does not match ${release_version}" >&2
             exit 1
           fi
+
+      - name: Require successful CI for release commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_COMMIT: ${{ steps.version.outputs.release_commit }}
+          WORKFLOW_NAME: CI / SimpleLogin-AIO
+        run: |
+          runs_json="$(gh run list \
+            --workflow "${WORKFLOW_NAME}" \
+            --commit "${RELEASE_COMMIT}" \
+            --limit 20 \
+            --json databaseId,headSha,status,conclusion)"
+
+          RUNS_JSON="${runs_json}" python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          release_commit = os.environ["RELEASE_COMMIT"]
+          runs = json.loads(os.environ["RUNS_JSON"])
+          successful = [
+              run
+              for run in runs
+              if run["headSha"] == release_commit
+              and run["status"] == "completed"
+              and run["conclusion"] == "success"
+          ]
+          if successful:
+              print(
+                  f"Found {len(successful)} successful CI run(s) for release commit {release_commit}."
+              )
+              sys.exit(0)
+
+          print(
+              f"No successful '{os.environ['WORKFLOW_NAME']}' run was found for release commit {release_commit}.",
+              file=sys.stderr,
+          )
+          sys.exit(1)
+          PY
 
       - name: Extract release notes
         id: notes

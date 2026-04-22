@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 import xml.etree.ElementTree as ET  # nosec B405 - trusted local XML only
 from pathlib import Path
@@ -119,14 +120,50 @@ REQUIRED_TARGETS = {
     "WORDS_FILE_PATH",
 }
 
-REQUIRED_CHANGELOG_LINK = "https://github.com/JSONbored/simplelogin-aio/releases"
 GENERATED_CHANGELOG_NOTE = (
     "Generated from CHANGELOG.md during release preparation. Do not edit manually."
+)
+GENERATED_CHANGELOG_BULLET = f"- {GENERATED_CHANGELOG_NOTE}"
+CHANGELOG_HEADER_PATTERN = re.compile(r"^### \d{4}-\d{2}-\d{2}$")
+LEGACY_CHANGELOG_MARKERS = (
+    "[b]Latest release[/b]",
+    "GitHub Releases",
+    "Full changelog and release notes:",
 )
 
 
 def load_enum_contracts() -> dict[str, dict[str, object]]:
     return json.loads(ENUM_CONTRACTS_PATH.read_text())
+
+
+def validate_changes(changes: str) -> str | None:
+    for marker in LEGACY_CHANGELOG_MARKERS:
+        if marker in changes:
+            return (
+                "simplelogin-aio.xml <Changes> still uses the legacy release-link "
+                f"format: {marker}"
+            )
+
+    lines = [line.strip() for line in changes.splitlines() if line.strip()]
+    if len(lines) < 3:
+        return (
+            "simplelogin-aio.xml <Changes> must include a date heading, the "
+            "generated note, and at least one bullet"
+        )
+    if not CHANGELOG_HEADER_PATTERN.fullmatch(lines[0]):
+        return "simplelogin-aio.xml <Changes> must start with '### YYYY-MM-DD'"
+    if lines[1] != GENERATED_CHANGELOG_BULLET:
+        return (
+            "simplelogin-aio.xml <Changes> second line should be "
+            f"'{GENERATED_CHANGELOG_BULLET}'"
+        )
+    invalid_lines = [line for line in lines[1:] if not line.startswith("- ")]
+    if invalid_lines:
+        return (
+            "simplelogin-aio.xml <Changes> must use bullet lines after the "
+            f"heading; found {invalid_lines[0]!r}"
+        )
+    return None
 
 
 def main() -> int:
@@ -161,17 +198,9 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
-    if REQUIRED_CHANGELOG_LINK not in changes:
-        print(
-            "simplelogin-aio.xml <Changes> does not include the canonical GitHub releases URL",
-            file=sys.stderr,
-        )
-        return 1
-    if GENERATED_CHANGELOG_NOTE not in changes:
-        print(
-            "simplelogin-aio.xml <Changes> is missing the generated-from-CHANGELOG note",
-            file=sys.stderr,
-        )
+    error = validate_changes(changes)
+    if error:
+        print(error, file=sys.stderr)
         return 1
 
     invalid_option_configs: list[str] = []

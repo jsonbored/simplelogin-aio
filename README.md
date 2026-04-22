@@ -111,6 +111,7 @@ CI cost model:
 
 - pull requests and pushes only run the Docker-backed integration suite when build-relevant files change
 - ordinary docs-only or metadata-only changes do not trigger the expensive container matrix
+- fast checks reuse `actions/setup-python` pip caching, and CI preloads a cached `simplelogin-aio:pytest` image before the integration suite instead of rebuilding it inside every pytest run
 - image publish remains gated behind the integration suite, so release/publish paths cannot skip it
 - release metadata commits on `main` still trigger the integration suite before publish, even if they only touch changelog/release files
 - nothing in this repo runs the Docker suite automatically before local commits; keep local integration runs explicit instead of turning every commit into an 8-minute pre-commit hook

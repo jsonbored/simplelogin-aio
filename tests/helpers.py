@@ -40,6 +40,11 @@ def docker_available() -> bool:
     return result.returncode == 0
 
 
+def docker_image_exists(image_tag: str) -> bool:
+    result = run_command(["docker", "image", "inspect", image_tag], check=False)
+    return result.returncode == 0
+
+
 def reserve_host_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(("127.0.0.1", 0))
@@ -52,6 +57,13 @@ class DockerRuntime:
         self.image_tag = image_tag
 
     def build(self) -> None:
+        if os.environ.get("AIO_TEST_IMAGE_REUSE") == "1":
+            if not docker_image_exists(self.image_tag):
+                raise AssertionError(
+                    f"Expected prebuilt test image {self.image_tag!r}, but it is not available."
+                )
+            return
+
         run_command(
             ["docker", "build", "--platform", "linux/amd64", "-t", self.image_tag, "."]
         )
@@ -69,6 +81,36 @@ class DockerRuntime:
 
     def remove(self, name: str) -> None:
         run_command(["docker", "rm", "-f", name], check=False)
+
+    def restore_bind_mount_permissions(self, path: Path) -> None:
+        if not path.exists():
+            return
+
+        uid = getattr(os, "getuid", lambda: 0)()
+        gid = getattr(os, "getgid", lambda: 0)()
+        result = run_command(
+            [
+                "docker",
+                "run",
+                "--rm",
+                "--platform",
+                "linux/amd64",
+                "-v",
+                f"{path}:/target",
+                "--entrypoint",
+                "sh",
+                self.image_tag,
+                "-c",
+                f"chown -R {uid}:{gid} /target && chmod -R u+rwX /target",
+            ],
+            check=False,
+        )
+        if result.returncode != 0:
+            raise AssertionError(
+                f"Failed to restore bind-mount permissions for {path}.\n"
+                f"stdout:\n{result.stdout}\n"
+                f"stderr:\n{result.stderr}"
+            )
 
     @contextmanager
     def container(
@@ -141,6 +183,8 @@ class DockerRuntime:
                 yield handle
             finally:
                 self.remove(name)
+                self.restore_bind_mount_permissions(Path(appdata_dir))
+                self.restore_bind_mount_permissions(Path(pgp_dir))
 
 
 class ContainerHandle:

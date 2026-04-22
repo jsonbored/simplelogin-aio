@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import os
 import time
 
 import pytest
 
 from tests.helpers import DockerRuntime, docker_available, run_command
 
-IMAGE_TAG = "simplelogin-aio:pytest"
+IMAGE_TAG = os.environ.get("AIO_TEST_IMAGE", "simplelogin-aio:pytest")
 pytestmark = pytest.mark.integration
 
 

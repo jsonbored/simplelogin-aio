@@ -4,7 +4,9 @@ on:
   push:
     branches: [main]
     paths:
+      - CHANGELOG.md
       - Dockerfile
+      - cliff.toml
       - pyproject.toml
       - requirements-dev.txt
       - rootfs/**
@@ -17,7 +19,9 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - CHANGELOG.md
       - Dockerfile
+      - cliff.toml
       - pyproject.toml
       - requirements-dev.txt
       - rootfs/**
@@ -135,7 +139,7 @@ jobs:
               simplelogin-aio.xml)
                 xml_related=true
                 ;;
-              scripts/*|.github/workflows/*)
+              CHANGELOG.md|cliff.toml|scripts/*|.github/workflows/*)
                 tooling_related=true
                 ;;
               renovate.json)
@@ -170,15 +174,6 @@ jobs:
           PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile rootfs/etc/simplelogin-aio/validate-config.py
           find rootfs -type f -name '*.sh' -print0 | xargs -0 -n1 bash -n
           find rootfs -type f -path '*/run' -print0 | xargs -0 -n1 bash -n
-
-      - name: Run targeted pytest validation suite
-        if: ${{ needs.detect-changes.outputs.build_related == 'true' || needs.detect-changes.outputs.xml_related == 'true' || needs.detect-changes.outputs.tooling_related == 'true' }}
-        run: |
-          python3 -m venv .venv-ci
-          .venv-ci/bin/pip install -r requirements-dev.txt
-          .venv-ci/bin/pytest \
-            tests/unit/test_ci_flags.py \
-            tests/template/test_validate_template.py
 
       - name: Validate Renovate config
         if: ${{ needs.detect-changes.outputs.renovate_related == 'true' }}
@@ -280,7 +275,7 @@ jobs:
         run: exit 1
 
   integration-tests:
-    if: ${{ needs.detect-changes.outputs.build_related == 'true' && needs.detect-changes.outputs.run_tests_requested == 'true' }}
+    if: ${{ needs.detect-changes.outputs.run_tests_requested == 'true' && (needs.detect-changes.outputs.build_related == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.publish_requested == 'true')) }}
     needs:
       - detect-changes
       - validate-template

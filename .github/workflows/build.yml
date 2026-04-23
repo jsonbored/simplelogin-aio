@@ -180,6 +180,7 @@ jobs:
       - name: Validate shell and python scripts
         if: ${{ needs.detect-changes.outputs.build_related == 'true' || needs.detect-changes.outputs.tooling_related == 'true' }}
         run: |
+          bash -n scripts/validate-derived-repo.sh
           PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile scripts/ci_flags.py
           PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile scripts/check-upstream.py
           PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile scripts/validate-template.py

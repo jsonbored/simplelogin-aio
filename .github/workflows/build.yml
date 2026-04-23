@@ -2,52 +2,48 @@ name: CI / SimpleLogin-AIO
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'Dockerfile'
-      - 'rootfs/**'
-      - 'scripts/**'
-      - 'upstream.toml'
-      - 'simplelogin-aio.xml'
-      - 'renovate.json'
-      - '.github/workflows/**'
+      - CHANGELOG.md
+      - Dockerfile
+      - cliff.toml
+      - pyproject.toml
+      - requirements-dev.txt
+      - rootfs/**
+      - scripts/**
+      - tests/**
+      - .trunk/**
+      - upstream.toml
+      - simplelogin-aio.xml
+      - renovate.json
+      - .github/workflows/**
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'Dockerfile'
-      - 'rootfs/**'
-      - 'scripts/**'
-      - 'upstream.toml'
-      - 'simplelogin-aio.xml'
-      - 'renovate.json'
-      - '.github/workflows/**'
+      - CHANGELOG.md
+      - Dockerfile
+      - cliff.toml
+      - pyproject.toml
+      - requirements-dev.txt
+      - rootfs/**
+      - scripts/**
+      - tests/**
+      - .trunk/**
+      - upstream.toml
+      - simplelogin-aio.xml
+      - renovate.json
+      - .github/workflows/**
   workflow_dispatch:
-    inputs:
-      run_smoke_test:
-        description: "Run the smoke-test job"
-        required: false
-        default: false
-        type: boolean
-      publish_images:
-        description: "Publish images to GHCR/Docker Hub"
-        required: false
-        default: false
-        type: boolean
-      sync_awesome_unraid:
-        description: "Open or refresh the awesome-unraid sync pull request"
-        required: false
-        default: false
-        type: boolean
-      aio_track_override:
-        description: "Optional package line override (example: aio-v3)"
-        required: false
-        default: ""
-        type: string
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   REGISTRY: ghcr.io
   IMAGE_NAME: jsonbored/simplelogin-aio
+  PYTHON_VERSION: "3.13"
+  TRUNK_ORG_URL_SLUG: aethereal
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -63,7 +59,8 @@ jobs:
       xml_related: ${{ steps.filter.outputs.xml_related }}
       renovate_related: ${{ steps.filter.outputs.renovate_related }}
       tooling_related: ${{ steps.filter.outputs.tooling_related }}
-      run_smoke_requested: ${{ steps.filter.outputs.run_smoke_requested }}
+      workflow_related: ${{ steps.filter.outputs.workflow_related }}
+      run_tests_requested: ${{ steps.filter.outputs.run_tests_requested }}
       publish_requested: ${{ steps.filter.outputs.publish_requested }}
     steps:
       - name: Checkout
@@ -80,20 +77,17 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_SHA_VALUE: ${{ github.sha }}
           GITHUB_REF_VALUE: ${{ github.ref }}
-          RUN_SMOKE_TEST_INPUT: ${{ github.event.inputs.run_smoke_test || '' }}
-          PUBLISH_IMAGES_INPUT: ${{ github.event.inputs.publish_images || '' }}
         run: |
           python3 scripts/ci_flags.py \
             --event-name "${EVENT_NAME}" \
-            --ref "${GITHUB_REF_VALUE}" \
-            --run-smoke-test-input "${RUN_SMOKE_TEST_INPUT}" \
-            --publish-images-input "${PUBLISH_IMAGES_INPUT}" >> "${GITHUB_OUTPUT}"
+            --ref "${GITHUB_REF_VALUE}" >> "${GITHUB_OUTPUT}"
 
           if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
             echo "build_related=true" >> "${GITHUB_OUTPUT}"
             echo "xml_related=true" >> "${GITHUB_OUTPUT}"
             echo "renovate_related=true" >> "${GITHUB_OUTPUT}"
             echo "tooling_related=true" >> "${GITHUB_OUTPUT}"
+            echo "workflow_related=true" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
 
@@ -111,6 +105,7 @@ jobs:
             echo "xml_related=true" >> "${GITHUB_OUTPUT}"
             echo "renovate_related=true" >> "${GITHUB_OUTPUT}"
             echo "tooling_related=true" >> "${GITHUB_OUTPUT}"
+            echo "workflow_related=true" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
 
@@ -121,6 +116,7 @@ jobs:
               echo "xml_related=true" >> "${GITHUB_OUTPUT}"
               echo "renovate_related=true" >> "${GITHUB_OUTPUT}"
               echo "tooling_related=true" >> "${GITHUB_OUTPUT}"
+              echo "workflow_related=true" >> "${GITHUB_OUTPUT}"
               exit 0
             fi
           else
@@ -130,6 +126,7 @@ jobs:
               echo "xml_related=true" >> "${GITHUB_OUTPUT}"
               echo "renovate_related=true" >> "${GITHUB_OUTPUT}"
               echo "tooling_related=true" >> "${GITHUB_OUTPUT}"
+              echo "workflow_related=true" >> "${GITHUB_OUTPUT}"
               exit 0
             fi
           fi
@@ -140,18 +137,23 @@ jobs:
           xml_related=false
           renovate_related=false
           tooling_related=false
+          workflow_related=false
 
           while IFS= read -r path; do
             [[ -z "${path}" ]] && continue
             case "${path}" in
-              Dockerfile|upstream.toml|rootfs/*)
+              Dockerfile|pyproject.toml|requirements-dev.txt|upstream.toml|rootfs/*|tests/*)
                 build_related=true
                 ;;
               simplelogin-aio.xml)
                 xml_related=true
                 ;;
-              scripts/*|.github/workflows/*)
+              CHANGELOG.md|cliff.toml|scripts/*|.trunk/*)
                 tooling_related=true
+                ;;
+              .github/workflows/*)
+                tooling_related=true
+                workflow_related=true
                 ;;
               renovate.json)
                 renovate_related=true
@@ -163,6 +165,7 @@ jobs:
           echo "xml_related=${xml_related}" >> "${GITHUB_OUTPUT}"
           echo "renovate_related=${renovate_related}" >> "${GITHUB_OUTPUT}"
           echo "tooling_related=${tooling_related}" >> "${GITHUB_OUTPUT}"
+          echo "workflow_related=${workflow_related}" >> "${GITHUB_OUTPUT}"
 
   validate-template:
     needs: detect-changes
@@ -177,39 +180,35 @@ jobs:
       - name: Validate shell and python scripts
         if: ${{ needs.detect-changes.outputs.build_related == 'true' || needs.detect-changes.outputs.tooling_related == 'true' }}
         run: |
-          bash -n scripts/smoke-test.sh
           PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile scripts/ci_flags.py
           PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile scripts/check-upstream.py
-          PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile scripts/test-ci-flags.py
           PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile scripts/validate-template.py
           PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile scripts/update-template-changes.py
           PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile scripts/release.py
+          PYTHONPYCACHEPREFIX=/tmp/simplelogin-aio-pyc python3 -m py_compile rootfs/etc/simplelogin-aio/validate-config.py
           find rootfs -type f -name '*.sh' -print0 | xargs -0 -n1 bash -n
           find rootfs -type f -path '*/run' -print0 | xargs -0 -n1 bash -n
-
-      - name: Validate CI flag resolver behavior
-        if: ${{ needs.detect-changes.outputs.build_related == 'true' || needs.detect-changes.outputs.tooling_related == 'true' }}
-        run: |
-          python3 scripts/test-ci-flags.py
-
-      - name: Validate XML
-        if: ${{ needs.detect-changes.outputs.build_related == 'true' || needs.detect-changes.outputs.xml_related == 'true' }}
-        run: |
-          python3 scripts/validate-template.py
 
       - name: Validate Renovate config
         if: ${{ needs.detect-changes.outputs.renovate_related == 'true' }}
         run: npx --yes --package renovate renovate-config-validator renovate.json
 
   pinned-actions:
+    needs: detect-changes
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
+      - name: Skip when workflow files are unchanged
+        if: ${{ needs.detect-changes.outputs.workflow_related != 'true' }}
+        run: echo "Workflow files unchanged; skipping pinned action scan."
+
       - name: Checkout
+        if: ${{ needs.detect-changes.outputs.workflow_related == 'true' }}
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Enforce pinned action SHAs
+        if: ${{ needs.detect-changes.outputs.workflow_related == 'true' }}
         run: |
           python3 - <<'PY'
           import pathlib
@@ -248,8 +247,8 @@ jobs:
       - name: Dependency review
         uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
 
-  smoke-test:
-    if: ${{ needs.detect-changes.outputs.build_related == 'true' }}
+  unit-tests:
+    if: ${{ needs.detect-changes.outputs.build_related == 'true' || needs.detect-changes.outputs.xml_related == 'true' || needs.detect-changes.outputs.tooling_related == 'true' }}
     needs:
       - detect-changes
       - validate-template
@@ -257,56 +256,131 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      TRUNK_API_TOKEN: ${{ secrets.TRUNK_API_TOKEN }}
     steps:
-      - name: Skip smoke test when not requested
-        if: ${{ needs.detect-changes.outputs.run_smoke_requested != 'true' }}
-        run: |
-          echo "Smoke test not requested for this run."
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        if: ${{ needs.detect-changes.outputs.run_smoke_requested == 'true' }}
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install pytest
+        run: python -m pip install -r requirements-dev.txt
 
+      - name: Run pytest unit tests
+        id: unit_pytest
+        run: |
+          mkdir -p reports
+          rm -f reports/pytest-unit.xml
+          set +e
+          python -m pytest \
+            tests/unit \
+            tests/template \
+            --junit-xml=reports/pytest-unit.xml \
+            -o junit_family=xunit1
+          status=$?
+          echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
+          exit 0
+
+      - name: Upload unit test results to Trunk
+        if: ${{ always() && env.TRUNK_API_TOKEN != '' }}
+        continue-on-error: true
+        uses: trunk-io/analytics-uploader@0e6c416c9d47c105654657984e5e4f0506dd84aa # v1
+        env:
+          TRUNK_API_TOKEN: ${{ secrets.TRUNK_API_TOKEN }}
+        with:
+          junit-paths: reports/pytest-unit.xml
+          org-slug: ${{ env.TRUNK_ORG_URL_SLUG }}
+          token: ${{ env.TRUNK_API_TOKEN }}
+
+      - name: Fail if unit tests failed
+        if: ${{ steps.unit_pytest.outputs.exit_code != '0' }}
+        run: exit 1
+
+  integration-tests:
+    if: ${{ needs.detect-changes.outputs.run_tests_requested == 'true' && (needs.detect-changes.outputs.build_related == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.publish_requested == 'true')) }}
+    needs:
+      - detect-changes
+      - validate-template
+      - pinned-actions
+      - unit-tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      TRUNK_API_TOKEN: ${{ secrets.TRUNK_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
       - name: Set up Docker Buildx
-        if: ${{ needs.detect-changes.outputs.run_smoke_requested == 'true' }}
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
-
-      - name: Build local test image
-        if: ${{ needs.detect-changes.outputs.run_smoke_requested == 'true' }}
+      - name: Prebuild pytest image
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           platforms: linux/amd64
           load: true
-          tags: simplelogin-aio:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: simplelogin-aio:pytest
+          cache-from: type=gha,scope=simplelogin-aio-pytest
+          cache-to: type=gha,mode=max,scope=simplelogin-aio-pytest
 
-      - name: Smoke test
-        if: ${{ needs.detect-changes.outputs.run_smoke_requested == 'true' }}
+      - name: Install pytest
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Run pytest integration tests
+        id: integration_pytest
+        env:
+          AIO_PYTEST_USE_PREBUILT_IMAGE: "true"
         run: |
-          chmod +x scripts/smoke-test.sh
-          export KEEP_SMOKE_ARTIFACTS=1
-          bash -x ./scripts/smoke-test.sh simplelogin-aio:ci
+          mkdir -p reports
+          rm -f reports/pytest-integration.xml
+          set +e
+          python -m pytest \
+            tests/integration \
+            -m integration \
+            --junit-xml=reports/pytest-integration.xml \
+            -o junit_family=xunit1
+          status=$?
+          echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
+          exit 0
 
-      - name: Dump smoke test diagnostics
+      - name: Upload integration test results to Trunk
+        if: ${{ always() && env.TRUNK_API_TOKEN != '' }}
+        continue-on-error: true
+        uses: trunk-io/analytics-uploader@0e6c416c9d47c105654657984e5e4f0506dd84aa # v1
+        env:
+          TRUNK_API_TOKEN: ${{ secrets.TRUNK_API_TOKEN }}
+        with:
+          junit-paths: reports/pytest-integration.xml
+          org-slug: ${{ env.TRUNK_ORG_URL_SLUG }}
+          token: ${{ env.TRUNK_API_TOKEN }}
+
+      - name: Dump Docker diagnostics
         if: failure()
         run: |
-          echo "Active containers:"
           docker ps -a
           echo
-          echo "Inspecting smoke container:"
-          docker inspect simplelogin-aio-smoke || true
-          echo
-          echo "Container logs:"
-          docker logs simplelogin-aio-smoke || true
+          docker images
+
+      - name: Fail if integration tests failed
+        if: ${{ steps.integration_pytest.outputs.exit_code != '0' }}
+        run: exit 1
 
   publish:
-    if: ${{ needs.detect-changes.outputs.build_related == 'true' && github.event_name != 'pull_request' && needs.detect-changes.outputs.publish_requested == 'true' }}
+    if: ${{ (needs.detect-changes.outputs.build_related == 'true' || needs.detect-changes.outputs.xml_related == 'true') && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.publish_requested == 'true' && needs.integration-tests.result == 'success' }}
     needs:
       - detect-changes
       - validate-template
       - pinned-actions
-      - smoke-test
+      - unit-tests
+      - integration-tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -354,7 +428,6 @@ jobs:
       - name: Compute image tags
         id: prep
         env:
-          AIO_TRACK_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.aio_track_override || '' }}
           DOCKERHUB_ENABLED: ${{ steps.dockerhub.outputs.enabled }}
           DOCKERHUB_IMAGE_NAME: ${{ steps.dockerhub.outputs.image_name }}
         run: |
@@ -365,24 +438,20 @@ jobs:
           raw_version="$(sed -n 's/^ARG UPSTREAM_VERSION=//p' Dockerfile | head -n1)"
           upstream_version="${raw_version%%@*}"
           upstream_digest="$(sed -n 's/^ARG UPSTREAM_IMAGE_DIGEST=//p' Dockerfile | head -n1)"
-          if [[ -n "${AIO_TRACK_OVERRIDE}" ]]; then
-            aio_track="${AIO_TRACK_OVERRIDE}"
+          changelog_version="$(python3 scripts/release.py latest-changelog-version 2>/dev/null || true)"
+          aio_revision=""
+          case "${changelog_version}" in
+            "${upstream_version}"-aio.*)
+              candidate_revision="${changelog_version##*.}"
+              if [[ "${candidate_revision}" =~ ^[0-9]+$ ]]; then
+                aio_revision="${candidate_revision}"
+              fi
+              ;;
+          esac
+          if [[ -n "${aio_revision}" ]]; then
+            aio_track="aio-v${aio_revision}"
           else
-            changelog_version="$(python3 scripts/release.py latest-changelog-version 2>/dev/null || true)"
-            aio_revision=""
-            case "${changelog_version}" in
-              "${upstream_version}"-aio.*)
-                candidate_revision="${changelog_version##*.}"
-                if [[ "${candidate_revision}" =~ ^[0-9]+$ ]]; then
-                  aio_revision="${candidate_revision}"
-                fi
-                ;;
-            esac
-            if [[ -n "${aio_revision}" ]]; then
-              aio_track="aio-v${aio_revision}"
-            else
-              aio_track="aio-v1"
-            fi
+            aio_track="aio-v1"
           fi
 
           {
@@ -414,8 +483,8 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=simplelogin-aio-publish
+          cache-to: type=gha,mode=max,scope=simplelogin-aio-publish
           tags: ${{ steps.prep.outputs.tags }}
           labels: |
             org.opencontainers.image.source=https://github.com/JSONbored/simplelogin-aio
@@ -430,7 +499,7 @@ jobs:
             io.jsonbored.wrapper.track=${{ steps.prep.outputs.aio_track }}
 
   sync-awesome-unraid:
-    if: ${{ needs.detect-changes.outputs.xml_related == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.sync_awesome_unraid == 'true')) }}
+    if: ${{ needs.detect-changes.outputs.xml_related == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     needs:
       - detect-changes
       - validate-template
@@ -475,7 +544,7 @@ jobs:
           path: target-repo
           add-paths: simplelogin-aio.xml
           commit-message: "chore: auto-sync simplelogin-aio.xml from upstream"
-          branch: "sync-awesome-unraid/simplelogin-aio"
+          branch: sync-awesome-unraid/simplelogin-aio
           delete-branch: true
           base: main
           title: "chore: sync simplelogin-aio template"

@@ -45,6 +45,8 @@ If your ISP blocks outbound port `25`, choose a relay provider in the template:
 
 If your ISP does not block outbound mail, `direct` can work.
 
+Use the template dropdown values as-is for enum-style fields. Do not free-type custom values into fields like `RELAY_MODE` or `ADMIN_FIDO_REQUIRED`.
+
 Advanced users can also skip the wrapper relay shortcuts and use the expanded Advanced View settings for direct upstream env overrides.
 
 ## 4. Start the Container
@@ -59,6 +61,8 @@ On first boot the container will:
 - run `init_app.py` once
 
 The first start can take longer than a normal restart because the internal database is being prepared.
+
+The wrapper now validates the rendered `.env` before starting the web app, job runner, email handler, or Postfix. If an enum-style value is invalid, startup stops once with a fatal error instead of leaving the dependent services in wait loops.
 
 ## 5. Confirm It Is Healthy
 
@@ -85,6 +89,8 @@ The template also exposes the full upstream `example.env` feature surface in Adv
 - hCaptcha, HIBP, SpamAssassin, Plausible, and Sentry
 - AWS, Paddle, Coinbase, and file-path based advanced settings
 - optional `/custom-assets` mounting for custom words files or key material
+
+Unless you have already planned around it, leave `ADMIN_FIDO_REQUIRED=none`. Turning it on without intentional admin security-key enrollment just creates unnecessary lockout risk.
 
 This keeps the Unraid template flexible without forcing beginners into a multi-container setup.
 

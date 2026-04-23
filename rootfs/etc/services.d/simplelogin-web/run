@@ -2,6 +2,8 @@
 # shellcheck shell=bash
 set -euo pipefail
 source /etc/simplelogin-aio/env-helpers.sh
+normalize_simplelogin_blank_sensitive_env_vars
+normalize_simplelogin_compat_env_vars
 normalize_simplelogin_presence_env_vars
 
 wait_for_postgres() {
@@ -39,14 +41,14 @@ wait_for_postgres
 wait_for_redis
 
 echo "Running SimpleLogin database migrations..."
-alembic upgrade head
+run_as_simplelogin_with_sanitized_env alembic upgrade head
 
 MARKER_FILE="/appdata/sl/.initialized"
 if [ ! -f "$MARKER_FILE" ]; then
     echo "Running SimpleLogin first-run initialization..."
-    python init_app.py
+    run_as_simplelogin_with_sanitized_env python init_app.py
     touch "$MARKER_FILE"
 fi
 
 WORKERS="${GUNICORN_WORKERS:-2}"
-exec gunicorn --bind 0.0.0.0:7777 --workers "$WORKERS" wsgi:app
+exec_as_simplelogin_with_sanitized_env gunicorn --bind 0.0.0.0:7777 --workers "$WORKERS" wsgi:app

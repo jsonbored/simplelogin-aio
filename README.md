@@ -1,8 +1,12 @@
+# SimpleLogin-AIO
+
+<!-- markdownlint-disable MD033 -->
 <div align="center">
 
 <img src="https://socialify.git.ci/JSONbored/simplelogin-aio/image?custom_description=SimpleLogin+All-in-One+Docker+image+for+Unraid+%E2%80%94+self-host+your+own+email+alias+service+easily.+Highly+configurable+for+power+users.&custom_language=Dockerfile&description=1&font=Raleway&forks=1&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F51910064%3Fs%3D200%26v%3D4&name=1&owner=1&pattern=Brick+Wall&stargazers=1&theme=Dark" alt="simplelogin-aio" width="640" height="320" />
 
 </div>
+<!-- markdownlint-enable MD033 -->
 
 ---
 
@@ -27,10 +31,11 @@ If you want the simplest supported path:
 1. Install the Unraid template.
 2. Set `URL`, `EMAIL_DOMAIN`, `SUPPORT_EMAIL`, and `FLASK_SECRET`.
 3. Pick a relay mode if your ISP blocks outbound TCP 25.
-4. Forward inbound TCP 25 from your router/firewall to the Unraid host.
-5. Start the container and wait for first-boot initialization to complete.
-6. Create your first account in the web UI, then disable registration in Advanced View if you want a private instance.
-7. Add the DNS records from [docs/simplelogin-setup.md](docs/simplelogin-setup.md).
+4. Leave dropdown-style advanced enum fields such as `ADMIN_FIDO_REQUIRED` on their documented values only. For most installs that means leaving `ADMIN_FIDO_REQUIRED=none`.
+5. Forward inbound TCP 25 from your router/firewall to the Unraid host.
+6. Start the container and wait for first-boot initialization to complete.
+7. Create your first account in the web UI, then disable registration in Advanced View if you want a private instance.
+8. Add the DNS records from [docs/simplelogin-setup.md](docs/simplelogin-setup.md).
 
 For most users, that is enough to get a working instance online.
 
@@ -64,6 +69,7 @@ In other words, the template is responsible for exposing deployment-time and int
 
 - Upstream SimpleLogin container support is currently `linux/amd64` only, so this wrapper publishes amd64-only images.
 - First boot initializes PostgreSQL when `DB_URI` is unset, starts Redis when `REDIS_URL` is unset, writes the runtime `.env`, applies `alembic upgrade head`, then runs `init_app.py`.
+- Before any long-running services start, the wrapper now validates the rendered SimpleLogin config and exits once with a fatal error if enum-style values are invalid.
 - `/appdata` is the main persistent volume. It stores PostgreSQL, Redis, uploads, DKIM keys, generated OpenID keys, and other runtime state.
 - `/pgp` is the optional persistent GnuPG home.
 - `/custom-assets` is an optional advanced mount for file-based upstream settings.
@@ -87,7 +93,35 @@ Local validation is built around:
 - XML validation for the audited template surface
 - shell and Python syntax checks
 - local Docker build on `linux/amd64`
-- end-to-end smoke test coverage for first boot, health, SMTP readiness, restart, and persistence
+- pytest coverage for first boot, health, SMTP readiness, restart, persistence, relay modes, fatal preflight paths, and external service overrides
+- Trunk Flaky Tests JUnit XML output for CI uploads and local report validation
+
+Run it locally with:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements-dev.txt
+pytest tests/unit tests/template
+pytest tests/integration -m integration
+```
+
+To generate the exact JUnit XML files used by CI and validate them locally with Trunk Analytics CLI:
+
+```bash
+mkdir -p reports
+pytest tests/unit tests/template --junit-xml=reports/pytest-unit.xml -o junit_family=xunit1
+pytest tests/integration -m integration --junit-xml=reports/pytest-integration.xml -o junit_family=xunit1
+./trunk-analytics-cli validate --junit-paths "reports/pytest-unit.xml,reports/pytest-integration.xml"
+```
+
+CI cost model:
+
+- pull requests and pushes only run the Docker-backed integration suite when build-relevant files change
+- ordinary docs-only or metadata-only changes do not trigger the expensive container matrix
+- image publish remains gated behind the integration suite, so release/publish paths cannot skip it
+- release metadata commits on `main` still trigger the integration suite before publish, even if they only touch changelog/release files
+- nothing in this repo runs the Docker suite automatically before local commits; keep local integration runs explicit instead of turning every commit into an 8-minute pre-commit hook
 
 ## Support
 

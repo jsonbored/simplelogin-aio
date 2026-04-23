@@ -9,7 +9,7 @@ import re
 import sys
 import urllib.error
 import urllib.request
-
+from typing import NoReturn
 
 ROOT = pathlib.Path(".")
 UPSTREAM_FILE = ROOT / "upstream.toml"
@@ -20,7 +20,7 @@ SEMVER_RE = re.compile(
 )
 
 
-def fail(message: str) -> "NoReturn":
+def fail(message: str) -> NoReturn:
     print(message, file=sys.stderr)
     raise SystemExit(1)
 
@@ -35,7 +35,7 @@ def http_json(url: str, headers: dict[str, str] | None = None) -> object:
         },
     )
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=30) as response:  # nosec B310
             return json.load(response)
     except urllib.error.HTTPError as exc:
         fail(f"HTTP error while requesting {url}: {exc.code} {exc.reason}")
@@ -70,7 +70,9 @@ def github_headers() -> dict[str, str]:
 
 
 def latest_github_release(repo: str, stable_only: bool) -> str:
-    data = http_json(f"https://api.github.com/repos/{repo}/releases?per_page=100", github_headers())
+    data = http_json(
+        f"https://api.github.com/repos/{repo}/releases?per_page=100", github_headers()
+    )
     if not isinstance(data, list):
         fail(f"Unexpected GitHub releases response for {repo}")
     releases: list[str] = []
@@ -115,7 +117,7 @@ def dockerhub_digest_for_tag(image: str, tag: str) -> str:
         },
     )
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=30) as response:  # nosec B310
             digest = response.headers.get("docker-content-digest", "").strip()
             if digest:
                 return digest
@@ -125,7 +127,9 @@ def dockerhub_digest_for_tag(image: str, tag: str) -> str:
             f"{exc.code} {exc.reason}"
         )
     except urllib.error.URLError as exc:
-        fail(f"Network error while requesting Docker Hub manifest for {image}:{tag}: {exc.reason}")
+        fail(
+            f"Network error while requesting Docker Hub manifest for {image}:{tag}: {exc.reason}"
+        )
 
     fail(f"Could not determine digest for Docker Hub image {image}:{tag}")
 
@@ -246,7 +250,9 @@ def main() -> None:
     current_digest = read_local_digest(upstream)
 
     if upstream_type == "github-release":
-        latest_version = latest_github_release(str(upstream.get("repo", "")).strip(), stable_only)
+        latest_version = latest_github_release(
+            str(upstream.get("repo", "")).strip(), stable_only
+        )
     else:
         fail(f"Unsupported upstream type: {upstream_type}")
 
@@ -254,7 +260,9 @@ def main() -> None:
     if not image:
         fail("Invalid upstream.toml: missing [upstream].image")
     latest_digest = dockerhub_digest_for_tag(image, latest_version)
-    updates_available = latest_version != current_version or latest_digest != current_digest
+    updates_available = (
+        latest_version != current_version or latest_digest != current_digest
+    )
 
     if os.environ.get("WRITE_UPSTREAM_VERSION") == "true" and updates_available:
         write_local_version(upstream, latest_version)

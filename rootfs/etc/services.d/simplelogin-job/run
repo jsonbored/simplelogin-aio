@@ -2,12 +2,14 @@
 # shellcheck shell=bash
 set -euo pipefail
 source /etc/simplelogin-aio/env-helpers.sh
+normalize_simplelogin_blank_sensitive_env_vars
+normalize_simplelogin_compat_env_vars
 normalize_simplelogin_presence_env_vars
 
-until curl -fsS http://127.0.0.1:7777/health >/dev/null; do
+until curl -fsS http://127.0.0.1:7777/health >/dev/null 2>&1; do
     echo "Waiting for SimpleLogin web service before starting job runner..."
     sleep 2
 done
 
 cd /code || exit 1
-exec python job_runner.py
+exec_as_simplelogin_with_sanitized_env python job_runner.py

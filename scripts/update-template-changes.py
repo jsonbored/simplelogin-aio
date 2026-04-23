@@ -7,11 +7,12 @@ import pathlib
 import re
 import sys
 
-
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DEFAULT_CHANGELOG = ROOT / "CHANGELOG.md"
 DEFAULT_TEMPLATE = ROOT / "simplelogin-aio.xml"
-RELEASES_URL = "https://github.com/JSONbored/simplelogin-aio/releases"
+GENERATED_NOTE = (
+    "- Generated from CHANGELOG.md during release preparation. Do not edit manually."
+)
 
 
 def extract_release_notes(version: str, changelog: pathlib.Path) -> str:
@@ -40,24 +41,41 @@ def extract_release_notes(version: str, changelog: pathlib.Path) -> str:
     return notes
 
 
-def build_changes_body(version: str, notes: str) -> str:
-    lines: list[str] = ["[b]Latest release[/b]", f"- {version}"]
+def release_heading(version: str, changelog: pathlib.Path) -> str:
+    heading = re.compile(rf"^##\s+{re.escape(version)}(?:\s+-\s+(.+))?$")
+    for line in changelog.read_text().splitlines():
+        match = heading.match(line.strip())
+        if match:
+            release_date = (match.group(1) or "").strip()
+            if release_date:
+                return f"### {release_date}"
+            break
+    return f"### {version}"
+
+
+def build_changes_body(version: str, notes: str, changelog: pathlib.Path) -> str:
+    lines: list[str] = [release_heading(version, changelog), GENERATED_NOTE]
     for line in notes.splitlines():
-        stripped = line.rstrip()
+        stripped = line.strip()
         if not stripped:
-            lines.append("")
             continue
         if stripped.startswith("<!--") and stripped.endswith("-->"):
             continue
-        if stripped.startswith("### "):
-            lines.append(f"[b]{stripped[4:]}[/b]")
+        if re.match(r"^\[[^\]]+\]:\s+https?://", stripped):
             continue
-        lines.append(stripped)
+        if stripped.startswith("## "):
+            continue
+        if stripped.startswith("### "):
+            continue
+        if stripped.startswith("Full Changelog:"):
+            continue
+        if stripped.startswith(("- ", "* ")):
+            lines.append(f"- {stripped[2:].strip()}")
+            continue
+        lines.append(f"- {stripped}")
 
-    lines.append("")
-    lines.append(
-        f"Full changelog and release notes: [url={RELEASES_URL}]GitHub Releases[/url]"
-    )
+    if len(lines) == 2:
+        raise SystemExit("Release notes did not produce any bullet lines for <Changes>")
     return "\n".join(lines).strip()
 
 
@@ -86,9 +104,11 @@ def main() -> int:
     args = parser.parse_args()
 
     notes = extract_release_notes(args.version, args.changelog)
-    body = build_changes_body(args.version, notes)
+    body = build_changes_body(args.version, notes, args.changelog)
     update_template(args.template, encode_for_template(body))
-    print(f"Updated <Changes> in {args.template} from {args.changelog} for {args.version}")
+    print(
+        f"Updated <Changes> in {args.template} from {args.changelog} for {args.version}"
+    )
     return 0
 
 

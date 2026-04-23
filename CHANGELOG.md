@@ -1,20 +1,23 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
 ## v4.80.1-aio.1 - 2026-04-16
+
 ### Dependency Updates
+
 - Bump dockerfile frontend digest
 
-
 ### Documentation
+
 - Clarify in-app SimpleLogin feature coverage
 
-
 ### Features
+
 - Align simplelogin-aio with sure-aio parity
 
-
 ### Fixes
+
 - Skip no-op release drafts
 - Make releases manual and gate heavy workflows
 - Harden publish and changelog range

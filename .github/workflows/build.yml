@@ -440,6 +440,7 @@ jobs:
           upstream_version="${raw_version%%@*}"
           upstream_digest="$(sed -n 's/^ARG UPSTREAM_IMAGE_DIGEST=//p' Dockerfile | head -n1)"
           changelog_version="$(python3 scripts/release.py latest-changelog-version 2>/dev/null || true)"
+          release_commit_pattern="^chore\\(release\\): $(python3 -c 'import re, sys; print(re.escape(sys.argv[1]))' "${changelog_version}")( \\(#[0-9]+\\))?$"
           commit_message="$(git log -1 --pretty=%B)"
           aio_track=""
           release_package_tag=""
@@ -448,7 +449,7 @@ jobs:
           case "${changelog_version}" in
             "${upstream_version}"-aio.*)
               candidate_revision="${changelog_version##*.}"
-              if [[ "${candidate_revision}" =~ ^[0-9]+$ ]] && printf '%s\n' "${commit_message}" | grep -Fxq "chore(release): ${changelog_version}"; then
+              if [[ "${candidate_revision}" =~ ^[0-9]+$ ]] && printf '%s\n' "${commit_message}" | grep -Eq "${release_commit_pattern}"; then
                 aio_track="aio-v${candidate_revision}"
                 release_package_tag="${upstream_version}-${aio_track}"
                 version_label="${release_package_tag}"

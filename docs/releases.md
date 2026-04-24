@@ -24,4 +24,4 @@ Release commits also publish the immutable packaging line tag, for example `v4.7
 2. The workflow computes the next `upstream-aio.N` version and opens a release PR.
 3. Review and merge that PR into `main`.
 4. Trigger **Publish Release / SimpleLogin-AIO** from `main`.
-5. The workflow reads the merged `CHANGELOG.md` entry, verifies CI passed on the release commit, creates the Git tag, and publishes the GitHub Release.
+5. The workflow reads the merged `CHANGELOG.md` entry, verifies CI passed on the release target commit, creates the Git tag, and publishes the GitHub Release.

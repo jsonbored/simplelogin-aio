@@ -350,6 +350,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
@@ -411,7 +413,13 @@ jobs:
           case "${changelog_version}" in
             "${upstream_version}"-aio.*)
               candidate_revision="${changelog_version##*.}"
-              if [[ "${candidate_revision}" =~ ^[0-9]+$ ]] && printf '%s\n' "${commit_message}" | grep -Eq "${release_commit_pattern}"; then
+              release_target="$(python3 scripts/release.py find-release-target-commit "${changelog_version}" 2>/dev/null || true)"
+              if [[ "${candidate_revision}" =~ ^[0-9]+$ && "${release_target}" == "${GITHUB_SHA}" ]]; then
+                aio_track="aio-v${candidate_revision}"
+                release_package_tag="${upstream_version}-${aio_track}"
+                version_label="${release_package_tag}"
+                wrapper_track="${aio_track}"
+              elif [[ "${candidate_revision}" =~ ^[0-9]+$ ]] && printf '%s\n' "${commit_message}" | grep -Eq "${release_commit_pattern}"; then
                 aio_track="aio-v${candidate_revision}"
                 release_package_tag="${upstream_version}-${aio_track}"
                 version_label="${release_package_tag}"

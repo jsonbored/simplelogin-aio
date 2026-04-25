@@ -1,6 +1,61 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## v4.80.1-aio.2 - 2026-04-25
+### CI
+- Allow manual awesome-unraid sync
+- Require Trunk uploads and PR integration
+- Gate releases on validated CI and template checks
+- Run integration tests for release metadata commits
+- Align release and pytest tooling with fleet
+- Preserve changelog history and publish release commits
+- Capture integration diagnostics on pytest failure
+- Standardize fleet tool configuration
+- Centralize fleet plugin config
+- Centralize trunk config and gate release tags
+- Accept squash release titles
+- Pin package tags to release targets
+- Fetch history for release tag lookup
+- Consolidate pytest workflow steps
+
+
+### Dependency Updates
+- Update trunk-io/analytics-uploader action to v2
+- Update dependency pytest to v9 [security]
+
+
+### Documentation
+- Clarify config field instructions
+- Tighten CA metadata
+- Add donation links
+- Add buy me a coffee
+
+
+### Fixes
+- Unblock first login and tighten required fields
+- Support encoded external database credentials
+- Sync relay mode with catalog
+- Enforce catalog-safe option syntax
+- Handle admin fido env quirks
+- Harden simplelogin AIO runtime and template
+- Make derived repo validator portable
+- Use workflow file selector for CI checks
+- Classify local action changes
+- Fail fast on init errors
+
+
+### Other Changes
+- Merge branch 'main' into codex/manual-awesome-sync
+- Migrate smoke tests to pytest
+- Merge branch 'main' into codex/ci-diagnostics-fixes
+- Merge branch 'main' into codex/release-target-immutability
+
+
+### Tests
+- Use docker volumes for runtime persistence
+- Add derived repo guardrail validation
+- Cover action and container contracts
+
 
 ## v4.80.1-aio.1 - 2026-04-16
 

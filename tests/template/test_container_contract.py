@@ -70,6 +70,7 @@ def test_unraid_metadata_contract_is_complete_and_unprivileged() -> None:
     root = _template_root()
 
     assert root.findtext("Privileged") == "false"  # nosec B101
+    assert root.findtext("Name") == "simplelogin-aio"  # nosec B101
     for tag in (
         "Name",
         "Repository",

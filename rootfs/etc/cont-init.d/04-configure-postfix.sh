@@ -1,5 +1,6 @@
 #!/command/with-contenv bash
 # shellcheck shell=bash
+# shellcheck disable=SC2154
 set -euo pipefail
 
 echo "Configuring Postfix MTA routing..."

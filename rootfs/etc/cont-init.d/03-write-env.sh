@@ -1,5 +1,6 @@
 #!/command/with-contenv bash
 # shellcheck shell=bash
+# shellcheck disable=SC2154
 set -euo pipefail
 # trunk-ignore(shellcheck/SC1091)
 source /etc/simplelogin-aio/env-helpers.sh

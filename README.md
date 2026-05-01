@@ -82,7 +82,7 @@ In other words, the template is responsible for exposing deployment-time and int
 - Release notes are generated with `git-cliff`.
 - The Unraid template `<Changes>` block is synced from `CHANGELOG.md` during release preparation.
 - `main` publishes `latest`, the pinned upstream version tag, an explicit AIO packaging line tag, and `sha-<commit>`.
-- When Docker Hub credentials are configured, the same publish flow can push Docker Hub tags in parallel with GHCR.
+- The Unraid template uses Docker Hub image tags for Community Applications metadata.
 
 See [docs/releases.md](docs/releases.md) for the release workflow details.
 

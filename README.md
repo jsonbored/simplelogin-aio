@@ -101,7 +101,7 @@ Run it locally with:
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements-dev.txt
-pytest tests/unit tests/template
+pytest tests/unit
 pytest tests/integration -m integration
 ```
 
@@ -109,9 +109,11 @@ To generate the exact JUnit XML files used by CI and validate them locally with 
 
 ```bash
 mkdir -p reports
-pytest tests/unit tests/template --junit-xml=reports/pytest-unit.xml -o junit_family=xunit1
+pytest tests/unit --junit-xml=reports/pytest-unit.xml -o junit_family=xunit1
 pytest tests/integration -m integration --junit-xml=reports/pytest-integration.xml -o junit_family=xunit1
-./trunk-analytics-cli validate --junit-paths "reports/pytest-unit.xml,reports/pytest-integration.xml"
+cd ../aio-fleet
+.venv/bin/python -m aio_fleet validate-repo --repo simplelogin-aio --repo-path ../simplelogin-aio
+.venv/bin/python -m aio_fleet trunk run --repo simplelogin-aio --repo-path ../simplelogin-aio --no-fix
 ```
 
 CI cost model:

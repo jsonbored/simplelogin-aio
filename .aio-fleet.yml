@@ -25,7 +25,7 @@ catalog:
     - source: simplelogin-aio.xml
       target: simplelogin-aio.xml
 tests:
-  unit: tests/unit tests/template
+  unit: tests/unit
   integration: tests/integration -m integration
   checkout_submodules: false
 validation:

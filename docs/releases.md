@@ -10,7 +10,7 @@
 
 ## Published image tags
 
-Every `main` build publishes:
+Every central `aio-fleet` publish for `main` publishes:
 
 - `latest`
 - the exact pinned upstream version
@@ -20,8 +20,8 @@ Release commits also publish the immutable packaging line tag, for example `v4.7
 
 ## Release flow
 
-1. Trigger **Prepare Release / SimpleLogin-AIO** from `main`.
-2. The workflow computes the next `upstream-aio.N` version and opens a release PR.
+1. From `aio-fleet`, run `python -m aio_fleet release status --repo simplelogin-aio` to inspect the next release.
+2. Run `python -m aio_fleet release prepare --repo simplelogin-aio` on a release branch, then open a `chore(release): <version>` PR.
 3. Review and merge that PR into `main`.
-4. Trigger **Publish Release / SimpleLogin-AIO** from `main`.
-5. The workflow reads the merged `CHANGELOG.md` entry, verifies CI passed on the release target commit, creates the Git tag, and publishes the GitHub Release.
+4. Run the central `aio-fleet` control check for the release target commit with publish enabled, and require `aio-fleet / required` to pass.
+5. Run `python -m aio_fleet release publish --repo simplelogin-aio` from `aio-fleet` to create the GitHub Release.

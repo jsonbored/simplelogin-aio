@@ -1,0 +1,29 @@
+schema_version: 1
+repo: simplelogin-aio
+github_repo: JSONbored/simplelogin-aio
+app_slug: simplelogin-aio
+image:
+  name: jsonbored/simplelogin-aio
+  cache_scope: simplelogin-aio-image
+  pytest_tag: simplelogin-aio:pytest
+  publish_platforms: linux/amd64
+release:
+  name: SimpleLogin-AIO
+  profile: upstream-aio-track
+  previous_tag_command: latest-aio-tag
+upstream:
+  name: SimpleLogin
+  digest_arg: UPSTREAM_IMAGE_DIGEST
+template:
+  xml_paths:
+  - simplelogin-aio.xml
+  generated: false
+catalog:
+  published: true
+  assets:
+  - source: simplelogin-aio.xml
+    target: simplelogin-aio.xml
+tests:
+  unit: tests/unit tests/template
+  integration: tests/integration -m integration
+  checkout_submodules: false

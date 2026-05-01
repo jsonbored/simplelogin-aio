@@ -78,13 +78,12 @@ In other words, the template is responsible for exposing deployment-time and int
 ## Publishing and Releases
 
 - Wrapper releases use the upstream version plus an AIO revision, such as `v4.80.1-aio.1`.
-- The repo monitors upstream releases and image digest changes through [upstream.toml](upstream.toml) and [scripts/check-upstream.py](scripts/check-upstream.py).
-- Release notes are generated with `git-cliff`.
-- The Unraid template `<Changes>` block is synced from `CHANGELOG.md` during release preparation.
+- Upstream monitoring, release preparation, registry publishing, and catalog sync are owned by `aio-fleet` from `.aio-fleet.yml`.
+- Changelog generation and XML `<Changes>` sync are run centrally by `aio-fleet` during release preparation.
 - `main` publishes `latest`, the pinned upstream version tag, an explicit AIO packaging line tag, and `sha-<commit>`.
 - The Unraid template uses Docker Hub image tags for Community Applications metadata.
 
-See [docs/releases.md](docs/releases.md) for the release workflow details.
+See [docs/releases.md](docs/releases.md) for the central release process details.
 
 ## Validation
 

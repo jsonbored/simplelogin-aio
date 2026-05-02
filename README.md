@@ -100,7 +100,7 @@ Run it locally with:
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate
-pip install -r requirements-dev.txt
+pip install -e "../aio-fleet[app-tests]"
 pytest tests/unit
 pytest tests/integration -m integration
 ```

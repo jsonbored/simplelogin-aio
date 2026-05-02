@@ -15,6 +15,19 @@ upstream:
   name: SimpleLogin
   version_key: UPSTREAM_VERSION
   digest_arg: UPSTREAM_IMAGE_DIGEST
+  monitor:
+    - component: aio
+      name: SimpleLogin
+      source: github-tags
+      repo: simple-login/app
+      image: simplelogin/app-ci
+      digest_source: dockerhub
+      dockerfile: Dockerfile
+      version_key: UPSTREAM_VERSION
+      digest_key: UPSTREAM_IMAGE_DIGEST
+      stable_only: true
+      strategy: pr
+      release_notes_url: https://github.com/simple-login/app/releases
 template:
   xml_paths:
     - simplelogin-aio.xml

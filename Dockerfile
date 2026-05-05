@@ -20,7 +20,9 @@ ENV PYTHONWARNINGS="ignore::SyntaxWarning"
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # trunk-ignore(hadolint/DL3008)
-RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y --no-install-recommends \
+RUN find /etc/apt -type f \( -name '*.list' -o -name '*.sources' \) -exec sed -i 's|http://|https://|g' {} + && \
+    printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' > /etc/apt/apt.conf.d/80-retries && \
+    apt-get update && apt-get -y dist-upgrade && apt-get install -y --no-install-recommends \
     curl \
     xz-utils \
     ca-certificates \

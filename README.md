@@ -34,7 +34,7 @@ If you want the simplest supported path:
 4. Leave dropdown-style advanced enum fields such as `ADMIN_FIDO_REQUIRED` on their documented values only. For most installs that means leaving `ADMIN_FIDO_REQUIRED=none`.
 5. Forward inbound TCP 25 from your router/firewall to the Unraid host.
 6. Start the container and wait for first-boot initialization to complete.
-7. Create your first account in the web UI, then disable registration in Advanced View if you want a private instance.
+7. Create your first account in the web UI with an existing personal mailbox that is not on `EMAIL_DOMAIN`, then disable registration in Advanced View if you want a private instance.
 8. Add the DNS records from [docs/simplelogin-setup.md](docs/simplelogin-setup.md).
 
 For most users, that is enough to get a working instance online.
@@ -74,6 +74,7 @@ In other words, the template is responsible for exposing deployment-time and int
 - `/pgp` is the optional persistent GnuPG home.
 - `/custom-assets` is an optional advanced mount for file-based upstream settings.
 - DKIM keys are persisted under `/appdata/dkim` and symlinked into the in-container paths the app expects.
+- SimpleLogin treats `EMAIL_DOMAIN` as an alias domain. Registration emails must use a separate existing mailbox, not an address hosted by the new alias domain.
 
 ## Publishing and Releases
 

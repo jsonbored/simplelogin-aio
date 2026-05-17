@@ -15,6 +15,8 @@ Set the Unraid template like this:
 - `EMAIL_DOMAIN=example.com`
 - `SUPPORT_EMAIL=support@example.com` (use a mailbox that already exists)
 
+`EMAIL_DOMAIN` becomes a SimpleLogin alias domain. Do not use an address on that same domain as the first account mailbox; register with an existing external mailbox you can already receive, then add alias-domain routing inside SimpleLogin after activation.
+
 ## 2. Add DNS Records
 
 At minimum, add:
@@ -69,7 +71,7 @@ The wrapper now validates the rendered `.env` before starting the web app, job r
 After the container comes up:
 
 - open the web UI on port `7777`
-- create your first account in the web UI while registration is still enabled
+- create your first account in the web UI while registration is still enabled, using a personal mailbox that is not on `EMAIL_DOMAIN`
 - once your first account exists, set `DISABLE_REGISTRATION=true` in Advanced View and restart if you want a private instance
 - confirm `/health` responds
 - check the logs for any Postfix relay or DNS warnings

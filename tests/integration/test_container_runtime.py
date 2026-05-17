@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import re
 import time
+import urllib.parse
+import urllib.request
+from http.cookiejar import CookieJar
 
 import pytest
 
@@ -32,6 +36,60 @@ def test_happy_path_boot_and_restart(runtime: DockerRuntime) -> None:
         container.wait_for_smtp()
         assert container.path_exists("/appdata/postgres/PG_VERSION")  # nosec B101
         assert container.path_exists("/appdata/sl/.initialized")  # nosec B101
+
+
+def _submit_registration(container, email: str) -> str:
+    register_url = f"http://127.0.0.1:{container.http_port}/auth/register"
+    opener = urllib.request.build_opener(
+        urllib.request.HTTPCookieProcessor(CookieJar())
+    )
+    register_page = (
+        opener.open(register_url, timeout=20).read().decode("utf-8", "replace")
+    )
+    csrf_match = re.search(r'name="csrf_token"[^>]*value="([^"]+)"', register_page)
+    assert csrf_match is not None  # nosec B101
+
+    post_data = urllib.parse.urlencode(
+        {
+            "csrf_token": csrf_match.group(1),
+            "email": email,
+            "password": "x" * 16,
+        }
+    ).encode()
+    request = urllib.request.Request(
+        register_url,
+        data=post_data,
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Referer": register_url,
+        },
+    )
+    return opener.open(request, timeout=20).read().decode("utf-8", "replace")
+
+
+def test_registration_uses_external_personal_mailbox(runtime: DockerRuntime) -> None:
+    with runtime.container(
+        env_overrides={
+            "DISABLE_REGISTRATION": "false",
+            "NOT_SEND_EMAIL": "true",
+        }
+    ) as container:
+        container.wait_for_http()
+        container.wait_for_smtp()
+
+        _submit_registration(container, "first-user@proton.me")
+        container.wait_for_log("send email to first-user@proton.me")
+
+        rejected_body = _submit_registration(container, "alias-user@example.com")
+        assert (  # nosec B101
+            "You cannot use this email address as your personal inbox." in rejected_body
+        )
+
+        users = container.exec(
+            "su -s /bin/sh postgres -c "
+            "\"psql -d simplelogin -Atc 'select email,activated from users order by email;'\""
+        ).stdout.strip()
+        assert users == "first-user@proton.me|f"  # nosec B101
 
 
 @pytest.mark.parametrize(

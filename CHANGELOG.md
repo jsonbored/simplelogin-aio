@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v4.80.6-aio.2 - 2026-05-17
+
+### Documentation
+
+- Clarify simplelogin registration mailbox
+
 ## v4.80.6-aio.1 - 2026-05-17
 
 ### Maintenance

@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## v4.80.6-aio.3 - 2026-05-20
+
+### Fixes
+
+- Enforce verified TLS for SMTP relays
+
+- Prevent DKIM symlink ownership takeover
+
+- Harden internal Postgres auth defaults
+
+- Restrict SimpleLogin state dir permissions
+
+- Default registration to disabled
+
 ## v4.80.6-aio.2 - 2026-05-17
 
 ### Documentation

@@ -25,9 +25,12 @@ echo -e "${CYAN}Checking DKIM keys...${NC}"
 # Ensure directory exists
 mkdir -p "${DKIM_DIR}"
 chmod 750 "${DKIM_DIR}"
-chown simplelogin:simplelogin "${DKIM_DIR}"
+chown root:simplelogin "${DKIM_DIR}"
 
-if [[ -f ${PRIVATE_KEY} ]]; then
+if [[ -L ${PRIVATE_KEY} ]]; then
+	echo -e "${RED}[ERROR] Refusing to use symlinked DKIM private key at ${PRIVATE_KEY}.${NC}"
+	exit 1
+elif [[ -f ${PRIVATE_KEY} ]]; then
 	echo -e "${GREEN}DKIM keys found at ${PRIVATE_KEY}. Skipping generation.${NC}"
 else
 	if [[ -z ${EMAIL_DOMAIN-} ]]; then
@@ -78,6 +81,10 @@ else
 	echo -e "A copy of this record has been saved to ${DNS_RECORD_FILE}"
 fi
 
+if [[ -L ${PRIVATE_KEY} ]]; then
+	echo -e "${RED}[ERROR] Refusing to update permissions on symlinked DKIM private key at ${PRIVATE_KEY}.${NC}"
+	exit 1
+fi
 chmod 600 "${PRIVATE_KEY}"
 chown simplelogin:simplelogin "${PRIVATE_KEY}"
 

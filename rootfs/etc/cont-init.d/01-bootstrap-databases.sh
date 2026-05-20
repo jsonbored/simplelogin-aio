@@ -11,7 +11,7 @@ mkdir -p /appdata/postgres /appdata/redis /appdata/dkim /appdata/sl/upload /pgp 
 chown -R redis:redis /appdata/redis
 chown -R postgres:postgres /appdata/postgres /run/postgresql
 chown -R simplelogin:simplelogin /appdata/sl /pgp /custom-assets
-chmod 755 /appdata/sl
+chmod 700 /appdata/sl
 chmod 700 /appdata/postgres /appdata/redis /pgp
 chmod 700 /pgp
 

@@ -71,8 +71,8 @@ The wrapper now validates the rendered `.env` before starting the web app, job r
 After the container comes up:
 
 - open the web UI on port `7777`
-- create your first account in the web UI while registration is still enabled, using a personal mailbox that is not on `EMAIL_DOMAIN`
-- once your first account exists, set `DISABLE_REGISTRATION=true` in Advanced View and restart if you want a private instance
+- keep `DISABLE_REGISTRATION=true` (default) to prevent public sign-up
+- only set `DISABLE_REGISTRATION=false` temporarily if you need web sign-up for first boot; once your first account exists, set it back to `true` and restart
 - confirm `/health` responds
 - check the logs for any Postfix relay or DNS warnings
 - check `/appdata/sl` and `/appdata/postgres` were populated

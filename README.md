@@ -34,7 +34,7 @@ If you want the simplest supported path:
 4. Leave dropdown-style advanced enum fields such as `ADMIN_FIDO_REQUIRED` on their documented values only. For most installs that means leaving `ADMIN_FIDO_REQUIRED=none`.
 5. Forward inbound TCP 25 from your router/firewall to the Unraid host.
 6. Start the container and wait for first-boot initialization to complete.
-7. Create your first account in the web UI with an existing personal mailbox that is not on `EMAIL_DOMAIN`, then disable registration in Advanced View if you want a private instance.
+7. Keep `DISABLE_REGISTRATION=true` (default) for a private instance. Only set it to `false` temporarily if you need web sign-up for first boot, then set it back to `true` and restart.
 8. Add the DNS records from [docs/simplelogin-setup.md](docs/simplelogin-setup.md).
 
 For most users, that is enough to get a working instance online.

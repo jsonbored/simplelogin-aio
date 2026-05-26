@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v4.80.6-aio.4 - 2026-05-26
+
+### Documentation
+
+- Add CA readme and utility category
+
 ## v4.80.6-aio.3 - 2026-05-20
 
 ### Fixes

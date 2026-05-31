@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v4.81.2-aio.1 - 2026-05-31
+
+### Maintenance
+
+- Bump simplelogin to v4.81.2
+
 ## v4.81.0-aio.1 - 2026-05-28
 
 ### Maintenance

@@ -37,11 +37,23 @@ catalog:
   assets:
     - source: simplelogin-aio.xml
       target: simplelogin-aio.xml
+    - source: screenshots/simplelogin-aio/01-login.png
+      target: screenshots/simplelogin-aio/01-login.png
+    - source: screenshots/simplelogin-aio/02-dashboard.png
+      target: screenshots/simplelogin-aio/02-dashboard.png
+    - source: screenshots/simplelogin-aio/03-settings.png
+      target: screenshots/simplelogin-aio/03-settings.png
 tests:
   unit: tests/unit
   integration: tests/integration -m integration
   checkout_submodules: false
 validation:
+  required_text_fields:
+    - ReadMe
+  exact_category_tokens:
+    - Network:Privacy
+    - Network:Web
+    - Tools:Utilities
   required_targets:
     - /appdata
     - /custom-assets

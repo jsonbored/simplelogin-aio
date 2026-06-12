@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## v4.81.3-aio.1 - 2026-06-12
+
+### Maintenance
+
+- Refresh fleet manifest contract
+
+- Bump simplelogin to v4.81.3 (#95)
+
+### Tests
+
+- Use shared app test helpers
+
 ## v4.81.2-aio.1 - 2026-05-31
 
 ### Maintenance

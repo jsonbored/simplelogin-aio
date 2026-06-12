@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1@sha256:2780b5c3bab67f1f76c781860de469442999ed1a0d7992a5efdf2cffc0e3d769
 # checkov:skip=CKV_DOCKER_3: s6-overlay requires root init for bundled services before daemons drop privileges
-ARG UPSTREAM_VERSION=v4.81.2
-ARG UPSTREAM_IMAGE_DIGEST=sha256:d307d0224e16f036deecc273e28dd82f60ab58fdabc3190a7a31c035c5833a68
+ARG UPSTREAM_VERSION=v4.81.3
+ARG UPSTREAM_IMAGE_DIGEST=sha256:0263d37ec69c355e064bcae7ab623f17c317c0c5cf965e72cbe70fe23226ce96
 FROM simplelogin/app-ci:${UPSTREAM_VERSION}@${UPSTREAM_IMAGE_DIGEST}
 
 ARG S6_OVERLAY_VERSION=3.2.0.0

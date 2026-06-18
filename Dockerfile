@@ -17,10 +17,10 @@ ENV PYTHONWARNINGS="ignore::SyntaxWarning"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# trunk-ignore(hadolint/DL3008)
 # Shared, pinned s6-overlay from the fleet aio-base overlay.
 COPY --from=aio-base /aio-overlay/ /
 
+# trunk-ignore(hadolint/DL3008)
 RUN aio-harden pre && \
     apt-get update && apt-get -y dist-upgrade && apt-get install -y --no-install-recommends \
     curl \

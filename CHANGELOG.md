@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v4.81.3-aio.2 - 2026-06-18
+
+### Refactors
+
+- Migrate to the shared aio-base s6 overlay (#97)
+
 ## v4.81.3-aio.1 - 2026-06-12
 
 ### Maintenance
